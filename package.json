@@ -1,0 +1,62 @@
+{
+  "name": "lnnode-app",
+  "version": "1.0.0",
+  "description": "Lightning Network Node Application built with Electron",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "dev:server": "cd nodeserver && node app.js",
+    "dev:full": "concurrently \"npm run dev:server\" \"npm run dev\"",
+    "build": "electron-builder",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --publish=never",
+    "server:install": "cd nodeserver && npm install",
+    "server:start": "cd nodeserver && node app.js",
+    "postinstall": "npm run server:install"
+  },
+  "keywords": [
+    "electron",
+    "lightning",
+    "bitcoin",
+    "node",
+    "lnd"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "electron-updater": "^6.1.7",
+    "axios": "^1.6.0"
+  },
+  "build": {
+    "appId": "com.yourcompany.lnnode-app",
+    "productName": "LN Node App",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "nodeserver/**/*",
+      "assets/**/*",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.finance",
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+} 

@@ -1,0 +1,33 @@
+{
+  "app": {
+    "name": "Lightning Network Node App",
+    "version": "1.0.0",
+    "theme": "auto",
+    "language": "zh-CN"
+  },
+  "node": {
+    "network": "testnet",
+    "host": "localhost",
+    "port": 9735,
+    "rpcPort": 10009,
+    "restPort": 8080,
+    "alias": "MyLightningNode",
+    "color": "#3399ff"
+  },
+  "security": {
+    "tlsCertPath": "",
+    "macaroonPath": "",
+    "enableTLS": true
+  },
+  "ui": {
+    "autoRefresh": true,
+    "refreshInterval": 30000,
+    "showAdvanced": false,
+    "notifications": true
+  },
+  "wallet": {
+    "autoUnlock": false,
+    "backupReminder": true,
+    "confirmTransactions": true
+  }
+} 
