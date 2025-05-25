@@ -4,7 +4,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const { nip19, nip04, getPublicKey, generateSecretKey, finalizeEvent } = require("nostr-tools")
 const { bytesToHex, hexToBytes } = require('@noble/hashes/utils') 
-const { getPrivateKey } = require('./src/store');
+const { getPrivateKey } = require('./store');
 
 // 保持对窗口对象的全局引用，避免 JavaScript 对象被垃圾回收时窗口关闭
 let mainWindow;
@@ -16,6 +16,8 @@ const nostrEnabled = true;
 const sk = getPrivateKey();
 const nostrPublicKey = getPublicKey(sk)
 
+const BasePath = path.join(__dirname, '../');
+
 // 启动 Express 服务器
 function startExpressServer(systemInfo) {
 
@@ -26,14 +28,14 @@ function startExpressServer(systemInfo) {
   const env = Object.assign({}, process.env);
   // 可以在这里设置额外的环境变量
   env.ELECTRON_RUN = 'true';
-  env.LIT_DATA_PATH = path.join(__dirname, 'data');
+  env.LIT_DATA_PATH = `${BasePath}/data`;
   env.LIT_NAME = "Lnfi-Node";
   env.CUR_ENV = 'local';
   env.PORT = '8090';
   env.LINK_HTTP_PORT = '8090';
   env.BINARY_PATH = systemInfo.binaryPath;
   // 使用 spawn 启动 Node.js 进程运行 app.js
-  serverProcess = spawn('node', ['nodeserver/app.js'], {
+  serverProcess = spawn('node', ['../nodeserver/app.js'], {
     cwd: __dirname,
     env: env
   });
@@ -68,7 +70,7 @@ function startRGBLightningNode(systemInfo) {
     // rgb-lightning-node dataldk0/ --daemon-listening-port 3001 \
     // --ldk-peer-listening-port 9735 --network regtest
 
-    let dataPath = path.join(__dirname, 'data');
+    let dataPath = `${BasePath}/data`;
 
     let args = [dataPath,'--daemon-listening-port','8001','--ldk-peer-listening-port','9735','--network','regtest'];
     
@@ -104,7 +106,7 @@ function getSystemInfo() {
 
   console.log(`Platform: ${platform}-${arch}  ${__dirname}`);
   // get bin path 
-  let binaryPath = path.join(__dirname, 'bin', `${platform}-${arch}`);
+  let binaryPath = `${BasePath}/bin/${platform}-${arch}`;
   console.log(`1=====>Binary Path: ${binaryPath}`);
 
   // check if binaryPath is exist
@@ -146,9 +148,8 @@ function createWindow() {
         nodeIntegration: false,
         contextIsolation: true,
         enableRemoteModule: false,
-        preload: path.join(__dirname, 'src/preload.js'),
-        // 添加这些配置以确保预加载脚本正常工作
-        webSecurity: true, // 保持安全性
+        preload: path.join(__dirname, 'preload.js'),
+        webSecurity: false, 
         allowRunningInsecureContent: false,
         experimentalFeatures: false
     },
@@ -214,17 +215,8 @@ ipcMain.handle('nostr-get-public-key', async () => {
       if (!nostrEnabled) {
           throw new Error('Nostr is not enabled');
       }
-      console.log("nostr-get-public-key=====>",nostrPublicKey);
       return nostrPublicKey;  
       
-      // // 通过 nodeserver API 获取公钥
-      // if (serverManager && serverManager.isServerRunning()) {
-      //     const result = await serverManager.makeRequest('/api/nostr/pubkey');
-      //     return result.pubkey;
-      // }
-      
-      // // 如果没有服务器，返回本地存储的公钥
-      // return nostrKeys?.pubkey || null;
   } catch (error) {
       throw new Error(`Failed to get public key: ${error.message}`);
   }
@@ -251,7 +243,9 @@ ipcMain.handle('nostr-get-relays', async () => {
       // 默认中继列表
       return {
           'wss://relay01.lnfi.network': { read: true, write: true },
-          'wss://relay01.lnfi.network': { read: true, write: true },
+          'wss://relay02.lnfi.network': { read: true, write: true },
+          'wss://nostr-01.yakihonne.com': { read: true, write: true },
+          'wss://nostr-02.yakihonne.com': { read: true, write: true },
       };
   } catch (error) {
       throw new Error(`Failed to get relays: ${error.message}`);
