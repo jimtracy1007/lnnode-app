@@ -1,12 +1,20 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
+const { nip19, nip04, getPublicKey, generateSecretKey, finalizeEvent } = require("nostr-tools")
+const { bytesToHex, hexToBytes } = require('@noble/hashes/utils') 
+const { getPrivateKey } = require('./src/store');
 
 // 保持对窗口对象的全局引用，避免 JavaScript 对象被垃圾回收时窗口关闭
 let mainWindow;
 let serverProcess = null;
 let rgbNodeProcess = null;
+
+// Nostr 
+const nostrEnabled = true;
+const sk = getPrivateKey();
+const nostrPublicKey = getPublicKey(sk)
 
 // 启动 Express 服务器
 function startExpressServer(systemInfo) {
@@ -19,6 +27,7 @@ function startExpressServer(systemInfo) {
   // 可以在这里设置额外的环境变量
   env.ELECTRON_RUN = 'true';
   env.LIT_DATA_PATH = path.join(__dirname, 'data');
+  env.LIT_NAME = "Lnfi-Node";
   env.CUR_ENV = 'local';
   env.PORT = '8090';
   env.LINK_HTTP_PORT = '8090';
@@ -131,10 +140,22 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    minWidth: 800,
+    minHeight: 600,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
-    }
+        nodeIntegration: false,
+        contextIsolation: true,
+        enableRemoteModule: false,
+        preload: path.join(__dirname, 'src/preload.js'),
+        // 添加这些配置以确保预加载脚本正常工作
+        webSecurity: true, // 保持安全性
+        allowRunningInsecureContent: false,
+        experimentalFeatures: false
+    },
+    // icon: getAppIcon(),
+    titleBarStyle: 'default',
+    show: true,
+    title: 'Lightning Network Node App'
   });
 
   // 等待一小段时间确保 Express 服务器已启动
@@ -143,7 +164,7 @@ function createWindow() {
     // mainWindow.loadURL('https://devoflnnode.unift.xyz/#/');
     mainWindow.loadURL('http://127.0.0.1:8090');
     
-    // mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
   }, 1000);
 
   // 当窗口关闭时触发
@@ -185,4 +206,116 @@ app.on('quit', () => {
     rgbNodeProcess.kill();
     rgbNodeProcess = null;
   }
+});
+
+// Nostr IPC 处理器
+ipcMain.handle('nostr-get-public-key', async () => {
+  try {
+      if (!nostrEnabled) {
+          throw new Error('Nostr is not enabled');
+      }
+      console.log("nostr-get-public-key=====>",nostrPublicKey);
+      return nostrPublicKey;  
+      
+      // // 通过 nodeserver API 获取公钥
+      // if (serverManager && serverManager.isServerRunning()) {
+      //     const result = await serverManager.makeRequest('/api/nostr/pubkey');
+      //     return result.pubkey;
+      // }
+      
+      // // 如果没有服务器，返回本地存储的公钥
+      // return nostrKeys?.pubkey || null;
+  } catch (error) {
+      throw new Error(`Failed to get public key: ${error.message}`);
+  }
+});
+
+ipcMain.handle('nostr-sign-event', async (event, eventData) => {
+  try {
+      if (!nostrEnabled) {
+          throw new Error('Nostr is not enabled');
+      }
+
+      let signedEvent = await finalizeEvent(eventData, sk)
+      return signedEvent;
+  } catch (error) {
+      throw new Error(`Failed to sign event: ${error.message}`);
+  }
+});
+
+ipcMain.handle('nostr-get-relays', async () => {
+  try {
+      if (!nostrEnabled) {
+          throw new Error('Nostr is not enabled');
+      }
+      // 默认中继列表
+      return {
+          'wss://relay01.lnfi.network': { read: true, write: true },
+          'wss://relay01.lnfi.network': { read: true, write: true },
+      };
+  } catch (error) {
+      throw new Error(`Failed to get relays: ${error.message}`);
+  }
+});
+
+ipcMain.handle('nostr-nip04-encrypt', async (event, pubkey, plaintext) => {
+  try {
+      if (!nostrEnabled) {
+          throw new Error('Nostr is not enabled');
+      }
+    
+      return nip04.encrypt(sk, pubkey, plaintext);
+      
+  } catch (error) {
+      throw new Error(`Failed to encrypt: ${error.message}`);
+  }
+});
+
+ipcMain.handle('nostr-nip04-decrypt', async (event, pubkey, ciphertext) => {
+  try {
+      if (!nostrEnabled) {
+          throw new Error('Nostr is not enabled');
+      }
+
+      return nip04.decrypt(sk, pubkey, ciphertext);
+      
+  } catch (error) {
+      throw new Error(`Failed to decrypt: ${error.message}`);
+  }
+});
+
+ipcMain.handle('nostr-nip44-encrypt', async (event, pubkey, plaintext) => {
+  try {
+      if (!nostrEnabled) {
+          throw new Error('Nostr is not enabled');
+      }
+      
+      return nip44.encrypt(sk, pubkey, plaintext)
+
+  } catch (error) {
+      throw new Error(`Failed to encrypt with NIP-44: ${error.message}`);
+  }
+});
+
+ipcMain.handle('nostr-nip44-decrypt', async (event, pubkey, ciphertext) => {
+  try {
+      if (!nostrEnabled) {
+          throw new Error('Nostr is not enabled');
+      }
+      return nip44.decrypt(sk, pubkey, ciphertext)
+  } catch (error) {
+      throw new Error(`Failed to decrypt with NIP-44: ${error.message}`);
+  }
+});
+
+ipcMain.handle('nostr-enable', async () => {
+  try {
+      return true;
+  } catch (error) {
+      throw new Error(`Failed to enable Nostr: ${error.message}`);
+  }
+});
+
+ipcMain.handle('nostr-is-enabled', async () => {
+  return nostrEnabled;
 });
