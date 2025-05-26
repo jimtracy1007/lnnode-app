@@ -131,6 +131,17 @@ function getSystemInfo() {
   
 }
 
+function getAppIcon() {
+  const iconPath = path.join(__dirname, '..', 'assets', 'lnfi.png');
+  console.log(`App icon path: ${iconPath}`);
+  if (fs.existsSync(iconPath)) {
+    return iconPath;
+  }
+  
+  console.warn('App icon not found at:', iconPath);
+  return undefined;
+}
+
 function createWindow() {
   let systemInfo = getSystemInfo();
   // Start Express Server
@@ -153,7 +164,7 @@ function createWindow() {
         allowRunningInsecureContent: false,
         experimentalFeatures: false
     },
-    // icon: getAppIcon(),
+    icon: getAppIcon(),
     titleBarStyle: 'default',
     show: true,
     title: 'Lightning Network Node App'
@@ -220,6 +231,12 @@ ipcMain.handle('nostr-get-public-key', async () => {
   } catch (error) {
       throw new Error(`Failed to get public key: ${error.message}`);
   }
+});
+
+ipcMain.handle('nostr-get-npub', async () => {
+  let npub = await nip19.npubEncode(nostrPublicKey);
+  console.log(`Nostr NPub: ${npub}`);
+  return npub;
 });
 
 ipcMain.handle('nostr-sign-event', async (event, eventData) => {

@@ -29,6 +29,8 @@ contextBridge.exposeInMainWorld('nostr', {
   
   // 获取公钥
   getPublicKey: () => ipcRenderer.invoke('nostr-get-public-key'),
+
+  getNpub: () => ipcRenderer.invoke('nostr-get-npub'),
   
   // 签名事件
   signEvent: (event) => ipcRenderer.invoke('nostr-sign-event', event),
@@ -58,11 +60,4 @@ contextBridge.exposeInMainWorld('nostr', {
 // 在窗口加载完成时执行
 window.addEventListener('DOMContentLoaded', () => {
     console.log('Preload script loaded with nodeserver integration');
-
-
-  if (window.nostr) {
-      console.log('✅ window.nostr is available');
-  } else {
-      console.warn('❌ window.nostr is not available');
-  }
 }); 

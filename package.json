@@ -1,6 +1,6 @@
 {
   "name": "lnnode-app",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Lightning Network Node Application built with Electron",
   "main": "src/main.js",
   "scripts": {
@@ -9,7 +9,8 @@
     "dev:server": "cd nodeserver && node app.js",
     "dev:full": "concurrently \"npm run dev:server\" \"npm run dev\"",
     "build": "electron-builder",
-    "build:mac": "electron-builder --mac",
+    "build:mac": "electron-builder --mac ",
+    "build:mac-amd": "electron-builder --mac --x64 ",
     "build:win": "electron-builder --win",
     "build:linux": "electron-builder --linux",
     "pack": "electron-builder --dir",
@@ -25,7 +26,7 @@
     "node",
     "lnd"
   ],
-  "author": "Your Name",
+  "author": "Lnfi-Network",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2",
@@ -39,8 +40,8 @@
     "nostr-tools": "^2.13.0"
   },
   "build": {
-    "appId": "com.yourcompany.lnnode-app",
-    "productName": "LN Node App",
+    "appId": "lnfi.network.lnnode",
+    "productName": "LN-Link",
     "directories": {
       "output": "dist"
     },
@@ -52,13 +53,40 @@
     ],
     "mac": {
       "category": "public.app-category.finance",
-      "target": "dmg"
+      "icon": "assets/lnfi.png",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["arm64", "x64"]
+        }
+      ],
+      "extraFiles": [
+        {
+          "from": "bin/darwin-${arch}/",
+          "to": "Resources/bin/darwin-${arch}/",
+          "filter": ["**/*"]
+        }
+      ]
     },
     "win": {
-      "target": "nsis"
+      "category": "public.app-category.finance",
+      "icon": "assets/lnfi.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ]
     },
     "linux": {
-      "target": "AppImage"
+      "category": "public.app-category.finance",
+      "icon": "assets/lnfi.png",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["arm64", "x64"]
+        }
+      ]
     }
   }
 }
