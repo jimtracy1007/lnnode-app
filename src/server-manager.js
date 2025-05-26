@@ -36,7 +36,6 @@ class ServerManager {
                     ...process.env,
                     NODE_ENV: 'development',
                     PORT: this.serverPort.toString(),
-                    CUR_ENV: 'local', // 根据 constants/index.js 中的 isLocalENV 判断
                 };
 
                 // 检查是否有 .env.local 文件
