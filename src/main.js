@@ -15,6 +15,7 @@ let rgbNodeProcess = null;
 const nostrEnabled = true;
 const sk = getPrivateKey();
 const nostrPublicKey = getPublicKey(sk)
+console.log("🚀 ~ nostrPublicKey:", nostrPublicKey, nip19.npubEncode(nostrPublicKey))
 
 const BasePath = path.join(__dirname, '../');
 
@@ -26,11 +27,24 @@ function startExpressServer(systemInfo) {
     return;
   }
   const env = Object.assign({}, process.env);
-  // 可以在这里设置额外的环境变量
-  env.ELECTRON_RUN = 'true';
-  env.LIT_DATA_PATH = `${BasePath}/data`;
+
+  env.ELECTRON_RUN = true;
+  // data path
   env.LIT_NAME = "Lnfi-Node";
-  env.CUR_ENV = 'local';
+  env.LIT_DATA_PATH = `${BasePath}data/`;
+
+  env.LOCAL_BASE_PATH = `${BasePath}data/${env.LIT_NAME}`;
+  env.LIT_DIR = `${env.LOCAL_BASE_PATH}/litd`;
+  env.LND_DATA_DIR= `${env.LOCAL_BASE_PATH}/lnd/data`;
+  env.LND_TLS_CERT_PATH= `${env.LOCAL_BASE_PATH}/lnd/tls.cert`;
+  env.LND_TLS_KEY_PATH= `${env.LOCAL_BASE_PATH}/lnd/tls.key`;
+  env.TAPD_DATA_DIR= `${env.LOCAL_BASE_PATH}/tapd/data`;
+
+  //port
+  env.LND_RPC_PORT = '10009';
+  env.LND_LISTEN_PORT = '9735';
+  env.LND_REST_PORT = '8080';
+
   env.PORT = '8090';
   env.LINK_HTTP_PORT = '8090';
   env.BINARY_PATH = systemInfo.binaryPath;
@@ -70,7 +84,7 @@ function startRGBLightningNode(systemInfo) {
     // rgb-lightning-node dataldk0/ --daemon-listening-port 3001 \
     // --ldk-peer-listening-port 9735 --network regtest
 
-    let dataPath = `${BasePath}/data`;
+    let dataPath = `${BasePath}data`;
 
     let args = [dataPath,'--daemon-listening-port','8001','--ldk-peer-listening-port','9735','--network','regtest'];
     
