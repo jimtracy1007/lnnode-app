@@ -33,14 +33,9 @@ function startExpressServer(systemInfo) {
   env.LIT_NAME = "Lnfi-Node";
   env.LIT_DATA_PATH = `${BasePath}data/`;
 
-  env.LOCAL_BASE_PATH = `${BasePath}data/${env.LIT_NAME}`;
-  env.LIT_DIR = `${env.LOCAL_BASE_PATH}/litd`;
-  env.LND_DATA_DIR= `${env.LOCAL_BASE_PATH}/lnd/data`;
-  env.LND_TLS_CERT_PATH= `${env.LOCAL_BASE_PATH}/lnd/tls.cert`;
-  env.LND_TLS_KEY_PATH= `${env.LOCAL_BASE_PATH}/lnd/tls.key`;
-  env.TAPD_DATA_DIR= `${env.LOCAL_BASE_PATH}/tapd/data`;
-  
-  env.ENABLE_TOR = false;
+  env.LIT_LOCAL_BASE_PATH = `${env.LIT_DATA_PATH}${env.LIT_NAME}`;
+
+  env.LIT_ENABLE_TOR = false;
 
   //port
   env.LND_RPC_PORT = '10009';
