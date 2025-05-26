@@ -15,7 +15,7 @@ let rgbNodeProcess = null;
 const nostrEnabled = true;
 const sk = getPrivateKey();
 const nostrPublicKey = getPublicKey(sk)
-console.log("🚀 ~ nostrPublicKey:", nostrPublicKey, nip19.npubEncode(nostrPublicKey))
+console.log("Link owner:::", nip19.npubEncode(nostrPublicKey))
 
 const BasePath = path.join(__dirname, '../');
 
@@ -36,15 +36,25 @@ function startExpressServer(systemInfo) {
   env.LIT_LOCAL_BASE_PATH = `${env.LIT_DATA_PATH}${env.LIT_NAME}`;
 
   env.LIT_ENABLE_TOR = false;
+  env.LIT_TOR_SOCKS_PORT = '9050';
+  env.LIT_TOR_CONTROL_PORT = '9051';
 
   //port
   env.LND_RPC_PORT = '10009';
   env.LND_LISTEN_PORT = '9735';
-  env.LND_REST_PORT = '8080';
+
 
   env.PORT = '8090';
   env.LINK_HTTP_PORT = '8090';
   env.BINARY_PATH = systemInfo.binaryPath;
+
+  env.LINK_OWNER = nip19.npubEncode(nostrPublicKey)
+
+  //rgb
+  env.RGB_LISTENING_PORT = '3002';
+  env.RGB_LDK_PEER_LISTENING_PORT = '9736';
+  env.RGB_NETWORK = 'regtest';
+
   // 使用 spawn 启动 Node.js 进程运行 app.js
   serverProcess = spawn('node', ['../nodeserver/app.js'], {
     cwd: __dirname,
@@ -69,46 +79,46 @@ function startExpressServer(systemInfo) {
 }
 
 // 启动 RGB Lightning Node
-function startRGBLightningNode(systemInfo) {
-  if(!systemInfo.support){
-    console.error(`System is not supported: ${systemInfo.platform}-${systemInfo.arch}`);
-    return;
-  }
-    const rgbNodePath = systemInfo.binaryPath + "/rgb-lightning-node";
+// function startRGBLightningNode(systemInfo) {
+//   if(!systemInfo.support){
+//     console.error(`System is not supported: ${systemInfo.platform}-${systemInfo.arch}`);
+//     return;
+//   }
+//     const rgbNodePath = systemInfo.binaryPath + "/rgb-lightning-node";
     
-    console.log(`Starting RGB Lightning Node from: ${rgbNodePath}`);
+//     console.log(`Starting RGB Lightning Node from: ${rgbNodePath}`);
 
-    // rgb-lightning-node dataldk0/ --daemon-listening-port 3001 \
-    // --ldk-peer-listening-port 9735 --network regtest
+//     // rgb-lightning-node dataldk0/ --daemon-listening-port 3001 \
+//     // --ldk-peer-listening-port 9735 --network regtest
 
-    let dataPath = `${BasePath}data`;
+//     let dataPath = `${BasePath}data`;
 
-    let args = [dataPath,'--daemon-listening-port','8001','--ldk-peer-listening-port','9735','--network','regtest'];
+//     let args = [dataPath,'--daemon-listening-port','8001','--ldk-peer-listening-port','9735','--network','regtest'];
     
-    // 使用 spawn 启动 RGB Lightning Node
-    rgbNodeProcess = spawn(rgbNodePath, args, {
-      cwd: __dirname,
-      env: process.env,
-      // 确保二进制文件有执行权限
-      shell: true
-    });
+//     // 使用 spawn 启动 RGB Lightning Node
+//     rgbNodeProcess = spawn(rgbNodePath, args, {
+//       cwd: __dirname,
+//       env: process.env,
+//       // 确保二进制文件有执行权限
+//       shell: true
+//     });
     
-    // 监听标准输出
-    rgbNodeProcess.stdout.on('data', (data) => {
-      console.log(`RGB Lightning Node: ${data}`);
-    });
+//     // 监听标准输出
+//     rgbNodeProcess.stdout.on('data', (data) => {
+//       console.log(`RGB Lightning Node: ${data}`);
+//     });
     
-    // 监听错误输出
-    rgbNodeProcess.stderr.on('data', (data) => {
-      console.error(`RGB Lightning Node error: ${data}`);
-    });
+//     // 监听错误输出
+//     rgbNodeProcess.stderr.on('data', (data) => {
+//       console.error(`RGB Lightning Node error: ${data}`);
+//     });
     
-    // 监听进程结束
-    rgbNodeProcess.on('close', (code) => {
-      console.log(`RGB Lightning Node process exited with code ${code}`);
-      rgbNodeProcess = null;
-    });
-  }
+//     // 监听进程结束
+//     rgbNodeProcess.on('close', (code) => {
+//       console.log(`RGB Lightning Node process exited with code ${code}`);
+//       rgbNodeProcess = null;
+//     });
+//   }
 
 // get os type
 function getSystemInfo() {
@@ -158,11 +168,11 @@ function createWindow() {
   // Start Express Server
   startExpressServer(systemInfo);
   // Start RGB Lightning Node
-  startRGBLightningNode(systemInfo);
+  //startRGBLightningNode(systemInfo);
   
   // 创建浏览器窗口
   mainWindow = new BrowserWindow({
-    width: 1200,
+    width: 1400,
     height: 800,
     minWidth: 800,
     minHeight: 600,
