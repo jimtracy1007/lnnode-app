@@ -39,6 +39,8 @@ function startExpressServer(systemInfo) {
   env.LND_TLS_CERT_PATH= `${env.LOCAL_BASE_PATH}/lnd/tls.cert`;
   env.LND_TLS_KEY_PATH= `${env.LOCAL_BASE_PATH}/lnd/tls.key`;
   env.TAPD_DATA_DIR= `${env.LOCAL_BASE_PATH}/tapd/data`;
+  
+  env.ENABLE_TOR = false;
 
   //port
   env.LND_RPC_PORT = '10009';
