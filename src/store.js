@@ -1,6 +1,6 @@
 const Store = require('electron-store');
-const { generateSecretKey } = require("nostr-tools")
-const { bytesToHex } = require('@noble/hashes/utils') 
+const { generatePrivateKey } = require("nostr-tools")
+// const { bytesToHex } = require('@noble/hashes/utils') 
 // 创建存储实例
 const store = new Store({
     name: 'app-config', // 文件名
@@ -19,7 +19,7 @@ const store = new Store({
 const getPrivateKey = () => {
     let key = "privateKey";
     if(!store.has(key)){
-        store.set(key, bytesToHex(generateSecretKey()));
+        store.set(key, generatePrivateKey());
     }
       
     return store.get(key);

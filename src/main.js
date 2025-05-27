@@ -21,7 +21,9 @@ let rgbNodeProcess = null;
 const nostrEnabled = true;
 const sk = getPrivateKey();
 const nostrPublicKey = getPublicKey(sk)
-console.log("Link owner:::", nip19.npubEncode(nostrPublicKey))
+const npub = nip19.npubEncode(nostrPublicKey)
+const LINK_HTTP_PORT = '8091'
+console.log("Link owner:::", npub)
 
 const BasePath = path.join(__dirname, '../');
 
@@ -106,11 +108,17 @@ function startExpressServer() {
   process.env.LND_LISTEN_PORT = '9735';
   process.env.LND_REST_PORT = '8080';
 
-  process.env.PORT = '8090';
-  process.env.LINK_HTTP_PORT = '8090';
+  process.env.PORT = LINK_HTTP_PORT;
+  process.env.LINK_HTTP_PORT = LINK_HTTP_PORT;
   process.env.BINARY_PATH = path.join(pathManager.getBinaryPath()); 
 
-  process.env.LINK_OWNER = nip19.npubEncode(nostrPublicKey)
+  process.env.LINK_OWNER = npub
+
+  //rgb
+
+  process.env.RGB_LISTENING_PORT = '3001';
+  process.env.RGB_LDK_PEER_LISTENING_PORT = '9735';
+  process.env.RGB_NETWORK = 'regtest';
 
   const nodeserverPath = pathManager.getNodeServerPath();
   const appJsPath = pathManager.getNodeServerAppJs();
@@ -135,7 +143,7 @@ function startExpressServer() {
   //   // });
   //   serverApp = require(appJsPath);
   // }
-  swpan('node','app.js')
+  // swpan('node','app.js')
   let serverApp = require('../nodeserver/app.js');
   console.log('Server started from asar');
     
@@ -311,7 +319,7 @@ function createWindow() {
   setTimeout(() => {
     // 加载应用的本地 URL
     // mainWindow.loadURL('https://devoflnnode.unift.xyz/#/');
-    mainWindow.loadURL('http://127.0.0.1:8090');
+    mainWindow.loadURL(`http://127.0.0.1:${LINK_HTTP_PORT}`);
     // mainWindow.loadURL('./src/index.html');
     // mainWindow.loadURL('index.html');
     mainWindow.webContents.openDevTools();
@@ -382,7 +390,7 @@ ipcMain.handle('nostr-sign-event', async (event, eventData) => {
       if (!nostrEnabled) {
           throw new Error('Nostr is not enabled');
       }
-
+      console.log("🚀 ~ ipcMain.handle ~ eventData:", sk)
       let signedEvent = await finishEvent(eventData, sk)
       return signedEvent;
   } catch (error) {
