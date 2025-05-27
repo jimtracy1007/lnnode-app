@@ -8,6 +8,7 @@
     "dev": "electron . --dev",
     "dev:server": "cd nodeserver && node app.js",
     "dev:full": "concurrently \"npm run dev:server\" \"npm run dev\"",
+    "prebuild": "npm run server:install",
     "build": "electron-builder",
     "build:mac": "electron-builder --mac ",
     "build:mac-amd": "electron-builder --mac --x64 ",
@@ -90,6 +91,7 @@
     ],
     "asarUnpack": [
       "nodeserver/**/*",
+      "nodeserver/node_modules/**/*",
       "bin/**/*"
     ],
     "extraResources": [
