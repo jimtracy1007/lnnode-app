@@ -3,12 +3,12 @@ const { generatePrivateKey } = require("nostr-tools")
 // const { bytesToHex } = require('@noble/hashes/utils') 
 // 创建存储实例
 const store = new Store({
-    name: 'app-config', // 文件名
+    name: 'app-config',
     defaults: {
         windowBounds: { width: 1200, height: 800 },
         userPreferences: {
-            theme: 'light',
-            language: 'zh-CN'
+            theme: 'dark',
+            language: 'en'
         },
         nostrSettings: {
             enabled: false,

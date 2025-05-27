@@ -1,36 +1,36 @@
-// 渲染进程脚本
+// Renderer process script
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Renderer process loaded');
     
-    // 初始化应用
+    // Initialize application
     await initializeApp();
     
-    // 设置导航
+    // Set up navigation
     setupNavigation();
     
-    // 设置事件监听器
+    // Set up event listeners
     setupEventListeners();
     
-    // 加载应用版本
+    // Load application version
     await loadAppVersion();
 });
 
-// 初始化应用
+// Initialize application
 async function initializeApp() {
     console.log('Initializing Lightning Network Node App...');
     
-    // 模拟初始化过程
-    updateSyncStatus('正在初始化...');
+    // Simulate initialization process
+    updateSyncStatus('Initializing...');
     
-    // 这里可以添加实际的初始化逻辑
-    // 例如：连接到 Lightning Network 节点、加载配置等
+    // Here you can add actual initialization logic
+    // For example: connecting to Lightning Network node, loading configurations, etc.
     
     setTimeout(() => {
-        updateSyncStatus('未连接');
+        updateSyncStatus('Not Connected');
     }, 2000);
 }
 
-// 设置导航功能
+// Set up navigation functionality
 function setupNavigation() {
     const navLinks = document.querySelectorAll('.nav-link');
     const pages = document.querySelectorAll('.page');
@@ -41,26 +41,26 @@ function setupNavigation() {
             
             const targetSection = link.getAttribute('data-section');
             
-            // 移除所有活跃状态
+            // Remove all active states
             navLinks.forEach(l => l.classList.remove('active'));
             pages.forEach(p => p.classList.remove('active'));
             
-            // 添加活跃状态
+            // Add active state
             link.classList.add('active');
             const targetPage = document.getElementById(targetSection);
             if (targetPage) {
                 targetPage.classList.add('active');
             }
             
-            // 更新页面内容
+            // Update page content
             updatePageContent(targetSection);
         });
     });
 }
 
-// 设置事件监听器
+// Set up event listeners
 function setupEventListeners() {
-    // 设置按钮点击事件
+    // Set up button click events
     const settingsBtn = document.getElementById('settingsBtn');
     if (settingsBtn) {
         settingsBtn.addEventListener('click', () => {
@@ -68,17 +68,17 @@ function setupEventListeners() {
         });
     }
     
-    // 钱包操作按钮
+    // Wallet operation buttons
     setupWalletActions();
     
-    // 通道操作按钮
+    // Channel operation buttons
     setupChannelActions();
     
-    // 设置表单处理
+    // Set up settings form handling
     setupSettingsForm();
 }
 
-// 设置钱包操作
+// Set up wallet operations
 function setupWalletActions() {
     const walletActions = document.querySelector('.wallet-actions');
     if (walletActions) {
@@ -92,7 +92,7 @@ function setupWalletActions() {
     }
 }
 
-// 设置通道操作
+// Set up channel operations
 function setupChannelActions() {
     const channelActions = document.querySelector('.channel-actions');
     if (channelActions) {
@@ -106,7 +106,7 @@ function setupChannelActions() {
     }
 }
 
-// 设置设置表单
+// Set up settings form
 function setupSettingsForm() {
     const settingsInputs = document.querySelectorAll('#settings input, #settings select');
     settingsInputs.forEach(input => {
@@ -116,18 +116,18 @@ function setupSettingsForm() {
     });
 }
 
-// 处理钱包操作
+// Handle wallet operations
 function handleWalletAction(action) {
     console.log(`Wallet action: ${action}`);
     
     switch (action) {
-        case '接收':
+        case 'Receive':
             showReceiveDialog();
             break;
-        case '发送':
+        case 'Send':
             showSendDialog();
             break;
-        case '生成地址':
+        case 'Generate Address':
             generateNewAddress();
             break;
         default:
@@ -135,15 +135,15 @@ function handleWalletAction(action) {
     }
 }
 
-// 处理通道操作
+// Handle channel operations
 function handleChannelAction(action) {
     console.log(`Channel action: ${action}`);
     
     switch (action) {
-        case '打开通道':
+        case 'Open Channel':
             showOpenChannelDialog();
             break;
-        case '关闭通道':
+        case 'Close Channel':
             showCloseChannelDialog();
             break;
         default:
@@ -151,27 +151,27 @@ function handleChannelAction(action) {
     }
 }
 
-// 处理设置变更
+// Handle setting changes
 function handleSettingChange(input) {
     const setting = input.name || input.id;
     const value = input.value;
     
     console.log(`Setting changed: ${setting} = ${value}`);
     
-    // 这里可以保存设置到本地存储或发送到主进程
+    // Here you can save settings to local storage or send to main process
     localStorage.setItem(`setting_${setting}`, value);
 }
 
-// 切换到指定页面
+// Switch to specified page
 function switchToPage(pageId) {
     const navLinks = document.querySelectorAll('.nav-link');
     const pages = document.querySelectorAll('.page');
     
-    // 移除所有活跃状态
+    // Remove all active states
     navLinks.forEach(l => l.classList.remove('active'));
     pages.forEach(p => p.classList.remove('active'));
     
-    // 添加活跃状态
+    // Add active state
     const targetLink = document.querySelector(`[data-section="${pageId}"]`);
     const targetPage = document.getElementById(pageId);
     
@@ -181,7 +181,7 @@ function switchToPage(pageId) {
     updatePageContent(pageId);
 }
 
-// 更新页面内容
+// Update page content
 function updatePageContent(pageId) {
     switch (pageId) {
         case 'dashboard':
@@ -202,21 +202,21 @@ function updatePageContent(pageId) {
     }
 }
 
-// 更新仪表板
+// Update dashboard
 function updateDashboard() {
     console.log('Updating dashboard...');
     
-    // 这里可以添加实际的数据更新逻辑
-    // 例如：从 Lightning Network 节点获取最新数据
+    // Here you can add actual data update logic
+    // For example: getting latest data from Lightning Network node
     
-    // 模拟数据更新
-    updateStatCard('余额', '0.00000000 BTC', '链上余额');
-    updateStatCard('闪电网络余额', '0 sats', '可用于支付');
-    updateStatCard('活跃通道', '0', '已建立的通道');
-    updateStatCard('节点状态', '离线', '同步状态');
+    // Simulate data update
+    updateStatCard('Balance', '0.00000000 BTC', 'On-chain Balance');
+    updateStatCard('Lightning Network Balance', '0 sats', 'Available for Payments');
+    updateStatCard('Active Channels', '0', 'Established Channels');
+    updateStatCard('Node Status', 'Offline', 'Sync Status');
 }
 
-// 更新统计卡片
+// Update stat card
 function updateStatCard(title, value, label) {
     const statCards = document.querySelectorAll('.stat-card');
     statCards.forEach(card => {
@@ -231,33 +231,33 @@ function updateStatCard(title, value, label) {
     });
 }
 
-// 更新钱包页面
+// Update wallet page
 function updateWallet() {
     console.log('Updating wallet...');
-    // 实现钱包数据更新逻辑
+    // Implement wallet data update logic
 }
 
-// 更新通道页面
+// Update channels page
 function updateChannels() {
     console.log('Updating channels...');
-    // 实现通道数据更新逻辑
+    // Implement channel data update logic
 }
 
-// 更新交易记录页面
+// Update transactions page
 function updateTransactions() {
     console.log('Updating transactions...');
-    // 实现交易记录更新逻辑
+    // Implement transaction record update logic
 }
 
-// 更新设置页面
+// Update settings page
 function updateSettings() {
     console.log('Updating settings...');
     
-    // 从本地存储加载设置
+    // Load settings from local storage
     loadSettingsFromStorage();
 }
 
-// 从本地存储加载设置
+// Load settings from local storage
 function loadSettingsFromStorage() {
     const settingsInputs = document.querySelectorAll('#settings input, #settings select');
     settingsInputs.forEach(input => {
@@ -270,37 +270,37 @@ function loadSettingsFromStorage() {
     });
 }
 
-// 显示接收对话框
+// Show receive dialog
 function showReceiveDialog() {
-    alert('接收功能正在开发中...');
-    // 这里可以实现实际的接收地址生成和显示
+    alert('Receive functionality is under development...');
+    // Here you can implement actual receive address generation and display
 }
 
-// 显示发送对话框
+// Show send dialog
 function showSendDialog() {
-    alert('发送功能正在开发中...');
-    // 这里可以实现实际的发送交易界面
+    alert('Send functionality is under development...');
+    // Here you can implement actual send transaction interface
 }
 
-// 生成新地址
+// Generate new address
 function generateNewAddress() {
-    alert('地址生成功能正在开发中...');
-    // 这里可以实现实际的地址生成逻辑
+    alert('Address generation functionality is under development...');
+    // Here you can implement actual address generation logic
 }
 
-// 显示打开通道对话框
+// Show open channel dialog
 function showOpenChannelDialog() {
-    alert('打开通道功能正在开发中...');
-    // 这里可以实现实际的通道打开界面
+    alert('Open channel functionality is under development...');
+    // Here you can implement actual channel opening interface
 }
 
-// 显示关闭通道对话框
+// Show close channel dialog
 function showCloseChannelDialog() {
-    alert('关闭通道功能正在开发中...');
-    // 这里可以实现实际的通道关闭界面
+    alert('Close channel functionality is under development...');
+    // Here you can implement actual channel closing interface
 }
 
-// 更新同步状态
+// Update sync status
 function updateSyncStatus(status) {
     const syncStatusElement = document.getElementById('syncStatus');
     if (syncStatusElement) {
@@ -308,7 +308,7 @@ function updateSyncStatus(status) {
     }
 }
 
-// 更新节点状态
+// Update node status
 function updateNodeStatus(isOnline) {
     const statusDot = document.querySelector('.status-dot');
     const statusText = document.querySelector('.status-text');
@@ -317,16 +317,16 @@ function updateNodeStatus(isOnline) {
         if (isOnline) {
             statusDot.classList.remove('offline');
             statusDot.classList.add('online');
-            statusText.textContent = '在线';
+            statusText.textContent = 'Online';
         } else {
             statusDot.classList.remove('online');
             statusDot.classList.add('offline');
-            statusText.textContent = '离线';
+            statusText.textContent = 'Offline';
         }
     }
 }
 
-// 加载应用版本
+// Load application version
 async function loadAppVersion() {
     try {
         if (window.electronAPI && window.electronAPI.getAppVersion) {
@@ -341,30 +341,30 @@ async function loadAppVersion() {
     }
 }
 
-// 工具函数：格式化数字
+// Utility function: format number
 function formatNumber(num, decimals = 8) {
     return parseFloat(num).toFixed(decimals);
 }
 
-// 工具函数：格式化时间
+// Utility function: format time
 function formatTime(timestamp) {
-    return new Date(timestamp).toLocaleString('zh-CN');
+    return new Date(timestamp).toLocaleString('en-US');
 }
 
-// 工具函数：显示通知
+// Utility function: show notification
 function showNotification(message, type = 'info') {
     console.log(`${type.toUpperCase()}: ${message}`);
-    // 这里可以实现实际的通知显示逻辑
+    // Here you can implement actual notification display logic
 }
 
-// 错误处理
+// Error handling
 window.addEventListener('error', (event) => {
     console.error('Application error:', event.error);
-    showNotification('应用程序发生错误，请查看控制台获取详细信息', 'error');
+    showNotification('An application error occurred. Please check the console for details.', 'error');
 });
 
-// 未处理的 Promise 拒绝
+// Unhandled Promise rejection
 window.addEventListener('unhandledrejection', (event) => {
     console.error('Unhandled promise rejection:', event.reason);
-    showNotification('发生未处理的错误', 'error');
+    showNotification('An unhandled error occurred', 'error');
 }); 

@@ -89,7 +89,17 @@
       "node_modules/**/*"
     ],
     "asarUnpack": [
-      "a/**/*"
+      "nodeserver/**/*",
+      "bin/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "nodeserver",
+        "to": "app.asar.unpacked/nodeserver",
+        "filter": [
+          "**/*"
+        ]
+      }
     ],
     "asar": true,
     "mac": {
