@@ -1,5 +1,5 @@
 {
-  "name": "lnnode-app",
+  "name": "LN-Link",
   "version": "0.1.0",
   "description": "Lightning Network Node Application built with Electron",
   "main": "src/main.js",
@@ -34,57 +34,106 @@
     "electron-builder": "^24.9.1"
   },
   "dependencies": {
-    "axios": "^1.6.0",
+    "@grpc/grpc-js": "^1.10.8",
+    "@grpc/proto-loader": "^0.7.9",
+    "@lightsparkdev/lightspark-sdk": "^1.8.9",
+    "@noble/secp256k1": "^2.0.0",
+    "axios": "^1.7.2",
+    "bitcoin-core": "^4.2.0",
+    "bitcoinjs-lib": "^6.1.5",
+    "body-parser": "^1.20.2",
+    "cookie-parser": "~1.4.4",
+    "crypto": "^1.0.1",
+    "crypto-js": "^4.2.0",
+    "dayjs": "^1.11.10",
+    "debug": "~2.6.9",
+    "decimal.js": "^10.4.3",
+    "dotenv": "^16.4.5",
+    "dotenv-cli": "^7.3.0",
+    "ecpair": "^2.1.0",
+    "electron-log": "^5.4.0",
     "electron-store": "^8.1.0",
     "electron-updater": "^6.1.7",
-    "nostr-tools": "^2.13.0"
+    "ethers": "^6.13.5",
+    "express": "^4.18.2",
+    "fetch-h2": "^3.0.2",
+    "form-data": "^4.0.2",
+    "http-errors": "~1.6.3",
+    "http2-wrapper": "^2.2.1",
+    "jest": "^29.6.2",
+    "log4js": "^6.9.1",
+    "long": "^5.2.3",
+    "module-alias": "^2.2.3",
+    "morgan": "~1.9.1",
+    "node-cache": "^5.1.2",
+    "node-cron": "^3.0.3",
+    "nostr-tools": "1.17.0",
+    "pug": "^2.0.4",
+    "request": "^2.88.2",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7",
+    "tiny-secp256k1": "^2.2.3",
+    "typescript": "^5.7.3",
+    "ws": "^8.18.0"
   },
   "build": {
-    "appId": "lnfi.network.lnnode",
+    "appId": "node.lnfi.network",
     "productName": "LN-Link",
     "directories": {
       "output": "dist"
     },
     "files": [
       "src/**/*",
-      "nodeserver/**/*",
       "assets/**/*",
+      "nodeserver/**/*",
       "node_modules/**/*"
     ],
+    "asarUnpack": [
+      "a/**/*"
+    ],
+    "asar": true,
     "mac": {
       "category": "public.app-category.finance",
       "icon": "assets/lnfi.png",
       "target": [
         {
           "target": "dmg",
-          "arch": ["arm64", "x64"]
+          "arch": [
+            "arm64",
+            "x64"
+          ]
         }
       ],
       "extraFiles": [
         {
           "from": "bin/darwin-${arch}/",
           "to": "Resources/bin/darwin-${arch}/",
-          "filter": ["**/*"]
+          "filter": [
+            "**/*"
+          ]
         }
       ]
     },
     "win": {
-      "category": "public.app-category.finance",
       "icon": "assets/lnfi.png",
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
     "linux": {
-      "category": "public.app-category.finance",
       "icon": "assets/lnfi.png",
       "target": [
         {
           "target": "AppImage",
-          "arch": ["arm64", "x64"]
+          "arch": [
+            "arm64",
+            "x64"
+          ]
         }
       ]
     }

@@ -1,10 +1,16 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
+global.crypto = require('crypto');
 const path = require('path');
-const { spawn } = require('child_process');
 const fs = require('fs');
-const { nip19, nip04, getPublicKey, generateSecretKey, finalizeEvent } = require("nostr-tools")
-const { bytesToHex, hexToBytes } = require('@noble/hashes/utils') 
+const { spawn, fork } = require('child_process');
+const { nip19, nip04, getPublicKey, finishEvent } = require("nostr-tools")
 const { getPrivateKey } = require('./store');
+const log = require('electron-log');
+
+// 配置日志
+log.transports.file.level = 'debug';
+log.transports.console.level = 'debug';
+
 
 // 保持对窗口对象的全局引用，避免 JavaScript 对象被垃圾回收时窗口关闭
 let mainWindow;
@@ -19,96 +25,185 @@ console.log("🚀 ~ nostrPublicKey:", nostrPublicKey, nip19.npubEncode(nostrPubl
 
 const BasePath = path.join(__dirname, '../');
 
-// 启动 Express 服务器
-function startExpressServer(systemInfo) {
+class PathManager {
+  constructor() {
+    this.isPackaged = app.isPackaged;
+    this.appPath = app.getAppPath();
+    
+    
+    if (this.isPackaged) {
+      this.userDataPath = app.getPath('userData');
+      this.resourcesPath = process.resourcesPath;
+      this.binaryPath = path.join(process.resourcesPath, 'bin');
+      this.nodeserverPath = path.join(process.resourcesPath, 'app.asar.unpacked', 'nodeserver');
+      this.nodeserverPath = path.join(__dirname, '..', 'nodeserver');
 
-  if(!systemInfo.support){
-    console.error(`System is not supported: ${systemInfo.platform}-${systemInfo.arch} Skip start Express Server`);
-    return;
+      // if (!fs.existsSync(this.nodeserverPath)) {
+      //   this.nodeserverPath = path.join(this.resourcesPath, 'nodeserver');
+      // }
+    } else {
+      this.userDataPath = path.join(__dirname, '..', 'data');
+      this.resourcesPath = path.join(__dirname, '..', 'data');
+      this.nodeserverPath = path.join(__dirname, '..', 'nodeserver');
+      this.binaryPath = path.join(__dirname, '..', 'bin');
+    }
+    
+    this.debugPaths();
   }
-  const env = Object.assign({}, process.env);
 
-  env.ELECTRON_RUN = true;
-  // data path
-  env.LIT_NAME = "Lnfi-Node";
-  env.LIT_DATA_PATH = `${BasePath}data/`;
+  getNodeServerPath() {
+    return this.nodeserverPath;
+  }
 
-  env.LIT_LOCAL_BASE_PATH = `${env.LIT_DATA_PATH}${env.LIT_NAME}`;
+  getNodeServerAppJs() {
+    return path.join(this.nodeserverPath, 'app.js');
+  }
 
-  env.LIT_ENABLE_TOR = false;
+  getBinaryPath() {
+    const platform = process.platform;
+    const arch = process.arch === 'x64' ? 'amd64' : process.arch;
+    return path.join(this.binaryPath, `${platform}-${arch}`);
+  }
 
-  //port
-  env.LND_RPC_PORT = '10009';
-  env.LND_LISTEN_PORT = '9735';
-  env.LND_REST_PORT = '8080';
+  getDataPath() {
+    return this.userDataPath;
+  }
 
-  env.PORT = '8090';
-  env.LINK_HTTP_PORT = '8090';
-  env.BINARY_PATH = systemInfo.binaryPath;
-  // 使用 spawn 启动 Node.js 进程运行 app.js
-  serverProcess = spawn('node', ['../nodeserver/app.js'], {
-    cwd: __dirname,
-    env: env
-  });
-  
-  // 监听标准输出
-  serverProcess.stdout.on('data', (data) => {
-    console.log(`Express server: ${data}`);
-  });
-  
-  // 监听错误输出
-  serverProcess.stderr.on('data', (data) => {
-    console.error(`Express server error: ${data}`);
-  });
-  
-  // 监听进程结束
-  serverProcess.on('close', (code) => {
-    console.log(`Express server process exited with code ${code}`);
-    serverProcess = null;
-  });
+  debugPaths() {
+    console.log('=== PathManager Debug ===');
+    console.log('isPackaged:', this.isPackaged);
+    console.log('getNodeServerPath():', this.getNodeServerPath());
+    console.log('getDataPath():', this.getDataPath());
+    console.log('getBinaryPath():',this.getBinaryPath());
+    console.log('nodeserver app.js exists:', fs.existsSync(this.getNodeServerAppJs()));
+    // console.log('========================');
+  }
 }
 
-// 启动 RGB Lightning Node
-function startRGBLightningNode(systemInfo) {
-  if(!systemInfo.support){
-    console.error(`System is not supported: ${systemInfo.platform}-${systemInfo.arch}`);
-    return;
-  }
-    const rgbNodePath = systemInfo.binaryPath + "/rgb-lightning-node";
-    
-    console.log(`Starting RGB Lightning Node from: ${rgbNodePath}`);
+const pathManager = new PathManager();
 
-    // rgb-lightning-node dataldk0/ --daemon-listening-port 3001 \
-    // --ldk-peer-listening-port 9735 --network regtest
+// 启动 Express 服务器
+function startExpressServer() {
 
-    let dataPath = `${BasePath}data`;
+  // if(!systemInfo.support){
+  //   console.error(`System is not supported: ${systemInfo.platform}-${systemInfo.arch} Skip start Express Server`);
+  //   return;
+  // }
 
-    let args = [dataPath,'--daemon-listening-port','8001','--ldk-peer-listening-port','9735','--network','regtest'];
+  const env = Object.assign({}, process.env);
+
+  process.env.ELECTRON_RUN = true;
+  // data path
+  process.env.LIT_NAME = "Lnfi-Node";
+  process.env.LIT_DATA_PATH = path.join(pathManager.getDataPath());
+
+  process.env.LIT_LOCAL_BASE_PATH = `${process.env.LIT_DATA_PATH}/${process.env.LIT_NAME}`;
+
+  process.env.LIT_ENABLE_TOR = false;
+
+  //port
+  process.env.LND_RPC_PORT = '10009';
+  process.env.LND_LISTEN_PORT = '9735';
+  process.env.LND_REST_PORT = '8080';
+
+  process.env.PORT = '8090';
+  process.env.LINK_HTTP_PORT = '8090';
+  process.env.BINARY_PATH = path.join(pathManager.getBinaryPath()); 
+
+  const nodeserverPath = pathManager.getNodeServerPath();
+  const appJsPath = pathManager.getNodeServerAppJs();
+  
+  console.log('Nodeserver path:', nodeserverPath);
+  console.log('App.js path:', appJsPath);
+  console.log('Nodeserver exists:', fs.existsSync(nodeserverPath));
+  console.log('App.js exists:', fs.existsSync(appJsPath));
+
+  // let serverApp;
+  // 使用 spawn 启动 Node.js 进程运行 app.js
+  // if(pathManager.isPackaged){
+  //   // serverProcess = fork(appJsPath, [], {
+  //   //   cwd: nodeserverPath,
+  //   //   env: env
+  //   // });
+  //   serverApp = require('../nodeserver/app.js');
+  // }else{
+  //   // serverProcess = fork(appJsPath,[], {
+  //   //   cwd: nodeserverPath,
+  //   //   env: env
+  //   // });
+  //   serverApp = require(appJsPath);
+  // }
+  swpan('node','app.js')
+  let serverApp = require('../nodeserver/app.js');
+  console.log('Server started from asar');
     
-    // 使用 spawn 启动 RGB Lightning Node
-    rgbNodeProcess = spawn(rgbNodePath, args, {
-      cwd: __dirname,
-      env: process.env,
-      // 确保二进制文件有执行权限
-      shell: true
-    });
+  // 错误处理
+  process.on('uncaughtException', (err) => {
+    // pop window
+    mainWindow.webContents.send('uncaughtException', err);
+    console.error('Uncaught Exception:', err);
+  });
+
+  return serverApp;
+  
+  // // 监听标准输出
+  // serverProcess.stdout.on('data', (data) => {
+  //   console.log(`Express server: ${data}`);
+  // });
+  
+  // // 监听错误输出
+  // serverProcess.stderr.on('data', (data) => {
+  //   console.error(`Express server error: ${data}`);
+  // });
+  
+  // // 监听进程结束
+  // serverProcess.on('close', (code) => {
+  //   console.log(`Express server process exited with code ${code}`);
+  //   serverProcess = null;
+  // });
+}
+
+// // 启动 RGB Lightning Node
+// function startRGBLightningNode(systemInfo) {
+//   // if(!systemInfo.support){
+//   //   console.error(`System is not supported: ${systemInfo.platform}-${systemInfo.arch}`);
+//   //   return;
+//   // }
+//     const rgbNodePath = path.join(pathManager.getBinaryPath(), 'rgb-lightning-node'); //systemInfo.binaryPath + "/rgb-lightning-node";
     
-    // 监听标准输出
-    rgbNodeProcess.stdout.on('data', (data) => {
-      console.log(`RGB Lightning Node: ${data}`);
-    });
+//     console.log(`Starting RGB Lightning Node from: ${rgbNodePath}`);
+
+//     // rgb-lightning-node dataldk0/ --daemon-listening-port 3001 \
+//     // --ldk-peer-listening-port 9735 --network regtest
+
+//     let dataPath = path.join(pathManager.getDataPath('data'), 'rgb');
+
+//     let args = [dataPath,'--daemon-listening-port','8001','--ldk-peer-listening-port','9735','--network','regtest'];
     
-    // 监听错误输出
-    rgbNodeProcess.stderr.on('data', (data) => {
-      console.error(`RGB Lightning Node error: ${data}`);
-    });
+//     // 使用 spawn 启动 RGB Lightning Node
+//     rgbNodeProcess = spawn(rgbNodePath, args, {
+//       cwd: __dirname,
+//       env: process.env,
+//       // 确保二进制文件有执行权限
+//       shell: true
+//     });
     
-    // 监听进程结束
-    rgbNodeProcess.on('close', (code) => {
-      console.log(`RGB Lightning Node process exited with code ${code}`);
-      rgbNodeProcess = null;
-    });
-  }
+//     // 监听标准输出
+//     rgbNodeProcess.stdout.on('data', (data) => {
+//       console.log(`RGB Lightning Node: ${data}`);
+//     });
+    
+//     // 监听错误输出
+//     rgbNodeProcess.stderr.on('data', (data) => {
+//       console.error(`RGB Lightning Node error: ${data}`);
+//     });
+    
+//     // 监听进程结束
+//     rgbNodeProcess.on('close', (code) => {
+//       console.log(`RGB Lightning Node process exited with code ${code}`);
+//       rgbNodeProcess = null;
+//     });
+//   }
 
 // get os type
 function getSystemInfo() {
@@ -154,11 +249,15 @@ function getAppIcon() {
 }
 
 function createWindow() {
-  let systemInfo = getSystemInfo();
+  // let systemInfo = getSystemInfo();
   // Start Express Server
-  startExpressServer(systemInfo);
+  try{
+    startExpressServer(); 
+  }catch(error){
+    log.error('Failed to start Express Server:', error);
+  }
   // Start RGB Lightning Node
-  startRGBLightningNode(systemInfo);
+  // startRGBLightningNode();
   
   // 创建浏览器窗口
   mainWindow = new BrowserWindow({
@@ -186,7 +285,8 @@ function createWindow() {
     // 加载应用的本地 URL
     // mainWindow.loadURL('https://devoflnnode.unift.xyz/#/');
     mainWindow.loadURL('http://127.0.0.1:8090');
-    
+    // mainWindow.loadURL('./src/index.html');
+    // mainWindow.loadURL('index.html');
     mainWindow.webContents.openDevTools();
   }, 1000);
 
@@ -256,7 +356,7 @@ ipcMain.handle('nostr-sign-event', async (event, eventData) => {
           throw new Error('Nostr is not enabled');
       }
 
-      let signedEvent = await finalizeEvent(eventData, sk)
+      let signedEvent = await finishEvent(eventData, sk)
       return signedEvent;
   } catch (error) {
       throw new Error(`Failed to sign event: ${error.message}`);
