@@ -21,7 +21,7 @@ let rgbNodeProcess = null;
 const nostrEnabled = true;
 const sk = getPrivateKey();
 const nostrPublicKey = getPublicKey(sk)
-console.log("🚀 ~ nostrPublicKey:", nostrPublicKey, nip19.npubEncode(nostrPublicKey))
+console.log("Link owner:::", nip19.npubEncode(nostrPublicKey))
 
 const BasePath = path.join(__dirname, '../');
 
@@ -110,6 +110,8 @@ function startExpressServer() {
   process.env.LINK_HTTP_PORT = '8090';
   process.env.BINARY_PATH = path.join(pathManager.getBinaryPath()); 
 
+  process.env.LINK_OWNER = nip19.npubEncode(nostrPublicKey)
+
   const nodeserverPath = pathManager.getNodeServerPath();
   const appJsPath = pathManager.getNodeServerAppJs();
   
@@ -172,14 +174,25 @@ function startExpressServer() {
 //     const rgbNodePath = path.join(pathManager.getBinaryPath(), 'rgb-lightning-node'); //systemInfo.binaryPath + "/rgb-lightning-node";
     
 //     console.log(`Starting RGB Lightning Node from: ${rgbNodePath}`);
+//     console.log(`Starting RGB Lightning Node from: ${rgbNodePath}`);
 
+//     // rgb-lightning-node dataldk0/ --daemon-listening-port 3001 \
+//     // --ldk-peer-listening-port 9735 --network regtest
 //     // rgb-lightning-node dataldk0/ --daemon-listening-port 3001 \
 //     // --ldk-peer-listening-port 9735 --network regtest
 
 //     let dataPath = path.join(pathManager.getDataPath('data'), 'rgb');
 
 //     let args = [dataPath,'--daemon-listening-port','8001','--ldk-peer-listening-port','9735','--network','regtest'];
+//     let args = [dataPath,'--daemon-listening-port','8001','--ldk-peer-listening-port','9735','--network','regtest'];
     
+//     // 使用 spawn 启动 RGB Lightning Node
+//     rgbNodeProcess = spawn(rgbNodePath, args, {
+//       cwd: __dirname,
+//       env: process.env,
+//       // 确保二进制文件有执行权限
+//       shell: true
+//     });
 //     // 使用 spawn 启动 RGB Lightning Node
 //     rgbNodeProcess = spawn(rgbNodePath, args, {
 //       cwd: __dirname,
@@ -192,12 +205,26 @@ function startExpressServer() {
 //     rgbNodeProcess.stdout.on('data', (data) => {
 //       console.log(`RGB Lightning Node: ${data}`);
 //     });
+//     // 监听标准输出
+//     rgbNodeProcess.stdout.on('data', (data) => {
+//       console.log(`RGB Lightning Node: ${data}`);
+//     });
     
 //     // 监听错误输出
 //     rgbNodeProcess.stderr.on('data', (data) => {
 //       console.error(`RGB Lightning Node error: ${data}`);
 //     });
+//     // 监听错误输出
+//     rgbNodeProcess.stderr.on('data', (data) => {
+//       console.error(`RGB Lightning Node error: ${data}`);
+//     });
     
+//     // 监听进程结束
+//     rgbNodeProcess.on('close', (code) => {
+//       console.log(`RGB Lightning Node process exited with code ${code}`);
+//       rgbNodeProcess = null;
+//     });
+//   }
 //     // 监听进程结束
 //     rgbNodeProcess.on('close', (code) => {
 //       console.log(`RGB Lightning Node process exited with code ${code}`);
@@ -261,7 +288,7 @@ function createWindow() {
   
   // 创建浏览器窗口
   mainWindow = new BrowserWindow({
-    width: 1200,
+    width: 1400,
     height: 800,
     minWidth: 800,
     minHeight: 600,
