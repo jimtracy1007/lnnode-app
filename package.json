@@ -1,6 +1,6 @@
 {
-  "name": "LN-Link",
-  "version": "0.1.0",
+  "name": "lnlink",
+  "version": "0.1.1",
   "description": "Lightning Network Node Application built with Electron",
   "main": "src/main.js",
   "scripts": {
@@ -9,7 +9,7 @@
     "dev:server": "cd nodeserver && node app.js",
     "dev:full": "concurrently \"npm run dev:server\" \"npm run dev\"",
     "build": "electron-builder",
-    "build:mac": "electron-builder --mac ",
+    "build:mac": "electron-builder --mac --x64 --arm64 ",
     "build:mac-amd": "electron-builder --mac --x64 ",
     "build:win": "electron-builder --win",
     "build:linux": "electron-builder --linux",
@@ -17,7 +17,7 @@
     "dist": "electron-builder --publish=never",
     "server:install": "cd nodeserver && yarn install",
     "server:start": "cd nodeserver && node app.js",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps && cd nodeserver && npm install"
   },
   "keywords": [
     "electron",
@@ -48,13 +48,21 @@
     "files": [
       "src/**/*",
       "assets/**/*",
-      "nodeserver/**/*"
+      "nodeserver/**/*",
+      "!nodeserver/node_modules"
+    ],
+    "extraResources": [
+      {
+        "from": "nodeserver/node_modules",
+        "to": "nodeserver/node_modules"
+      }
     ],
     "asarUnpack": [
-      "nodeserver/**/*",
-      "nodeserver/node_modules/**/*",
-      "bin/**/*"
+      "**/nodeserver/**/*"
     ],
+    "npmRebuild": true,
+    "nodeGypRebuild": false,
+    "buildDependenciesFromSource": false,
     "asar": true,
     "mac": {
       "category": "public.app-category.finance",
@@ -63,7 +71,12 @@
         {
           "target": "dmg",
           "arch": [
-            "arm64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "dmg",
+          "arch": [
             "x64"
           ]
         }

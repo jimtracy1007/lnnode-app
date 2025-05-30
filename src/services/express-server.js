@@ -109,13 +109,23 @@ class ExpressServer {
       env.RGB_LDK_PEER_LISTENING_PORT = '9735';
       env.RGB_NETWORK = 'regtest';
 
+      // 设置 NODE_PATH 来包含 nodeserver 的 node_modules
+      const nodeModulesPath = pathManager.getNodeServerNodeModulesPath();
+      if (env.NODE_PATH) {
+        env.NODE_PATH = `${nodeModulesPath}${path.delimiter}${env.NODE_PATH}`;
+      } else {
+        env.NODE_PATH = nodeModulesPath;
+      }
+
       const nodeserverPath = pathManager.getNodeServerPath();
       const appJsPath = pathManager.getNodeServerAppJs();
       
       log.info(`Nodeserver path: ${nodeserverPath}`);
       log.info(`App.js path: ${appJsPath}`);
+      log.info(`Node modules path: ${nodeModulesPath}`);
       log.info(`Nodeserver exists: ${fs.existsSync(nodeserverPath)}`);
       log.info(`App.js exists: ${fs.existsSync(appJsPath)}`);
+      log.info(`Node modules exists: ${fs.existsSync(nodeModulesPath)}`);
 
       if (!fs.existsSync(appJsPath)) {
         const errMsg = `Nodeserver app.js not found at: ${appJsPath}. Cannot start server.`;
@@ -124,51 +134,8 @@ class ExpressServer {
         return;
       }
 
-      // Check if node_modules exists, if not, install dependencies first
-      const nodeModulesPath = path.join(nodeserverPath, 'node_modules');
-      if (!fs.existsSync(nodeModulesPath) || !fs.existsSync(path.join(nodeModulesPath, 'body-parser'))) {
-        log.info('node_modules not found in nodeserver directory, installing dependencies...');
-        
-        // Use npm install to install dependencies
-        const npmInstallProcess = spawn('npm', ['install'], {
-          cwd: nodeserverPath,
-          shell: true,
-          env: env
-        });
-        
-        processManager.trackProcess(npmInstallProcess);
-        
-        npmInstallProcess.stdout.on('data', (data) => {
-          log.info(`npm install stdout: ${data.toString().trim()}`);
-        });
-        
-        npmInstallProcess.stderr.on('data', (data) => {
-          log.error(`npm install stderr: ${data.toString().trim()}`);
-        });
-        
-        npmInstallProcess.on('close', (code) => {
-          if (code !== 0) {
-            const errMsg = `npm install process exited with code ${code}`;
-            log.error(errMsg);
-            reject(new Error(errMsg));
-            return;
-          }
-          
-          log.info('Dependencies installed successfully');
-          
-          // Start server after dependencies are successfully installed
-          this._startServerProcess(nodeserverPath, appJsPath, env, resolve, reject);
-        });
-        
-        npmInstallProcess.on('error', (err) => {
-          const errMsg = `Failed to start npm install: ${err.message}`;
-          log.error(errMsg);
-          reject(new Error(errMsg));
-        });
-      } else {
-        log.info('node_modules found, starting server directly');
-        this._startServerProcess(nodeserverPath, appJsPath, env, resolve, reject);
-      }
+      // Start the server process directly
+      this._startServerProcess(nodeserverPath, appJsPath, env, resolve, reject);
     });
   }
 

@@ -13,10 +13,12 @@ class PathManager {
       this.resourcesPath = process.resourcesPath;
       this.binaryPath = path.join(process.resourcesPath, 'bin');
       this.nodeserverPath = path.join(process.resourcesPath, 'app.asar.unpacked', 'nodeserver');
+      this.nodeserverNodeModulesPath = path.join(process.resourcesPath, 'nodeserver', 'node_modules');
     } else {
       this.userDataPath = path.join(__dirname, '..', '..', 'data');
       this.resourcesPath = path.join(__dirname, '..', '..', 'data');
       this.nodeserverPath = path.join(__dirname, '..', '..', 'nodeserver');
+      this.nodeserverNodeModulesPath = path.join(__dirname, '..', '..', 'nodeserver', 'node_modules');
       this.binaryPath = path.join(__dirname, '..', '..', 'bin');
     }
     
@@ -29,6 +31,10 @@ class PathManager {
 
   getNodeServerAppJs() {
     return path.join(this.nodeserverPath, 'app.js');
+  }
+
+  getNodeServerNodeModulesPath() {
+    return this.nodeserverNodeModulesPath;
   }
 
   getBinaryPath() {
@@ -56,9 +62,11 @@ class PathManager {
     log.info('=== PathManager Debug ===');
     log.info('isPackaged:', this.isPackaged);
     log.info('getNodeServerPath():', this.getNodeServerPath());
+    log.info('getNodeServerNodeModulesPath():', this.getNodeServerNodeModulesPath());
     log.info('getDataPath():', this.getDataPath());
     log.info('getBinaryPath():',this.getBinaryPath());
     log.info('nodeserver app.js exists:', fs.existsSync(this.getNodeServerAppJs()));
+    log.info('nodeserver node_modules exists:', fs.existsSync(this.getNodeServerNodeModulesPath()));
   }
 }
 
