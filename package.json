@@ -8,7 +8,6 @@
     "dev": "electron . --dev",
     "dev:server": "cd nodeserver && node app.js",
     "dev:full": "concurrently \"npm run dev:server\" \"npm run dev\"",
-    "prebuild": "npm run server:install",
     "build": "electron-builder",
     "build:mac": "electron-builder --mac ",
     "build:mac-amd": "electron-builder --mac --x64 ",
@@ -16,9 +15,9 @@
     "build:linux": "electron-builder --linux",
     "pack": "electron-builder --dir",
     "dist": "electron-builder --publish=never",
-    "server:install": "cd nodeserver && npm install",
+    "server:install": "cd nodeserver && yarn install",
     "server:start": "cd nodeserver && node app.js",
-    "postinstall": "npm run server:install"
+    "postinstall": "electron-builder install-app-deps"
   },
   "keywords": [
     "electron",
@@ -35,47 +34,10 @@
     "electron-builder": "^24.9.1"
   },
   "dependencies": {
-    "@grpc/grpc-js": "^1.10.8",
-    "@grpc/proto-loader": "^0.7.9",
-    "@lightsparkdev/lightspark-sdk": "^1.8.9",
-    "@noble/secp256k1": "^2.0.0",
-    "axios": "^1.7.2",
-    "bitcoin-core": "^4.2.0",
-    "bitcoinjs-lib": "^6.1.5",
-    "body-parser": "^1.20.2",
-    "cookie-parser": "~1.4.4",
-    "crypto": "^1.0.1",
-    "crypto-js": "^4.2.0",
-    "dayjs": "^1.11.10",
-    "debug": "~2.6.9",
-    "decimal.js": "^10.4.3",
-    "dotenv": "^16.4.5",
-    "dotenv-cli": "^7.3.0",
-    "ecpair": "^2.1.0",
     "electron-log": "^5.4.0",
     "electron-store": "^8.1.0",
     "electron-updater": "^6.1.7",
-    "ethers": "^6.13.5",
-    "express": "^4.18.2",
-    "fetch-h2": "^3.0.2",
-    "form-data": "^4.0.2",
-    "http-errors": "~1.6.3",
-    "http2-wrapper": "^2.2.1",
-    "jest": "^29.6.2",
-    "log4js": "^6.9.1",
-    "long": "^5.2.3",
-    "module-alias": "^2.2.3",
-    "morgan": "~1.9.1",
-    "node-cache": "^5.1.2",
-    "node-cron": "^3.0.3",
-    "nostr-tools": "1.17.0",
-    "pug": "^2.0.4",
-    "request": "^2.88.2",
-    "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.7",
-    "tiny-secp256k1": "^2.2.3",
-    "typescript": "^5.7.3",
-    "ws": "^8.18.0"
+    "nostr-tools": "1.17.0"
   },
   "build": {
     "appId": "node.lnfi.network",
@@ -86,22 +48,12 @@
     "files": [
       "src/**/*",
       "assets/**/*",
-      "nodeserver/**/*",
-      "node_modules/**/*"
+      "nodeserver/**/*"
     ],
     "asarUnpack": [
       "nodeserver/**/*",
       "nodeserver/node_modules/**/*",
       "bin/**/*"
-    ],
-    "extraResources": [
-      {
-        "from": "nodeserver",
-        "to": "app.asar.unpacked/nodeserver",
-        "filter": [
-          "**/*"
-        ]
-      }
     ],
     "asar": true,
     "mac": {
@@ -148,6 +100,7 @@
           ]
         }
       ]
-    }
+    },
+    "afterPack": "./afterPack.js"
   }
 }
