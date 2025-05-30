@@ -39,7 +39,7 @@ class PathManager {
 
   getBinaryPath() {
     const platform = process.platform;
-    const arch = process.arch === 'x64' ? 'amd64' : process.arch;
+    const arch = process.arch;
     return path.join(this.binaryPath, `${platform}-${arch}`);
   }
 
