@@ -1,5 +1,5 @@
 {
-  "name": "lnlink",
+  "name": "LNNode",
   "version": "0.1.1",
   "description": "Lightning Network Node Application built with Electron",
   "main": "src/main.js",

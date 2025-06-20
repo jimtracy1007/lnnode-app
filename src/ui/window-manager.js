@@ -77,7 +77,7 @@ class WindowManager {
       <html>
         <head>
           <meta charset="UTF-8">
-          <title>Lightning Network Node</title>
+          <title>Lnfi Network LN Node</title>
           <style>
             html, body {
               height: 100%;
@@ -130,7 +130,7 @@ class WindowManager {
         </head>
         <body>
           <div class="container">
-            <h1>Lightning Network Node</h1>
+            <h1>LN Node</h1>
             <p>Starting services, please wait...</p>
             <div class="loader"></div>
             <div class="status" id="status">Initializing...</div>
@@ -151,7 +151,7 @@ class WindowManager {
             }, 2000);
             
             // Ensure document title is correct
-            document.title = "Lightning Network Node";
+            document.title = "Lnfi Network LN Node";
           </script>
         </body>
       </html>
@@ -169,7 +169,7 @@ class WindowManager {
       <html>
         <head>
           <meta charset="UTF-8">
-          <title>Lightning Network Node - Error</title>
+          <title>Lnfi Network LN Node - Error</title>
           <style>
             html, body {
               height: 100%;
@@ -223,14 +223,14 @@ class WindowManager {
         <body>
           <div class="container">
             <h1>Server Start Failed</h1>
-            <p>Unable to start Lightning Network Node server.</p>
+            <p>Unable to start Lnfi Network LN Node server.</p>
             <div class="error-details">${error.message}</div>
             <p>Please check the log files for more information.</p>
             <button onclick="window.location.reload()">Retry</button>
           </div>
           <script>
             // Ensure document title is correct
-            document.title = "Lightning Network Node - Error";
+            document.title = "Lnfi Network LN Node - Error";
           </script>
         </body>
       </html>
@@ -251,7 +251,7 @@ class WindowManager {
       <html>
         <head>
           <meta charset="UTF-8">
-          <title>Lightning Network Node - Connection Error</title>
+          <title>Lnfi Network LN Node - Connection Error</title>
           <style>
             html, body {
               height: 100%;
@@ -294,14 +294,14 @@ class WindowManager {
         <body>
           <div class="container">
             <h1>Connection Error</h1>
-            <p>Unable to connect to Lightning Network Node server.</p>
+            <p>Unable to connect to LN Node server.</p>
             <p>Error: ${errorDescription}</p>
             <p>Please ensure the server is running and port ${expressServer.getPort()} is accessible.</p>
             <button onclick="window.location.reload()">Retry</button>
           </div>
           <script>
             // Ensure document title is correct
-            document.title = "Lightning Network Node - Connection Error";
+            document.title = "Lnfi Network LN Node - Connection Error";
           </script>
         </body>
       </html>
@@ -338,7 +338,7 @@ class WindowManager {
       log.info('Application page started loading');
       // Keep title unchanged
       if (this.mainWindow) {
-        this.mainWindow.setTitle('Lightning Network Node');
+        this.mainWindow.setTitle('Lnfi Network LN Node');
       }
     });
     
@@ -347,7 +347,7 @@ class WindowManager {
       
       // Set correct title
       if (this.mainWindow) {
-        this.mainWindow.setTitle('Lightning Network Node');
+        this.mainWindow.setTitle('Lnfi Network LN Node');
         
         // Ensure page content is visible
         if (this.mainWindow.isMinimized()) {
