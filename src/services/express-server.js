@@ -1,11 +1,12 @@
 const { fork, spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const net = require('net');
 const log = require('../utils/logger');
 const pathManager = require('../utils/path-manager');
 const processManager = require('./process-manager');
 const nostrService = require('./nostr-service');
-
+const { exec } = require('node:child_process');
 class ExpressServer {
   constructor() {
     this.serverProcess = null;
@@ -19,10 +20,72 @@ class ExpressServer {
     return this.port;
   }
 
+  // Check if a port is available
+ async isPortAvailable(port) {
+    return new Promise((resolve) => {
+      exec(`lsof -i :${port}`, (_error, stdout) => {
+        if (stdout && stdout.trim()) {
+          return resolve(false)
+        }
+        const server = net.createServer()
+  
+        server.on("error", (_err) => {
+          resolve(false)
+        })
+  
+        server.listen(port, "0.0.0.0", () => {
+          server.close(() => {
+            resolve(true)
+          })
+        })
+      })
+    })
+  }
+
+  // Find next available port based on port range rules
+  async findAvailablePort(basePort) {
+    const portRanges = {
+      8091: [8091, 8092, 8093, 8094, 8095, 8096], // LINK_HTTP_PORT: 8091 -> 8092...
+    };
+
+    // If port has specific range rules
+    if (portRanges[basePort]) {
+      for (const port of portRanges[basePort]) {
+        if (await this.isPortAvailable(port)) {
+          return port;
+        }
+      }
+      // If all predefined ports are taken, continue with +1 increment
+      let port = portRanges[basePort][portRanges[basePort].length - 1] + 1;
+      while (port < 65535) {
+        if (await this.isPortAvailable(port)) {
+          return port;
+        }
+        port++;
+      }
+    } else {
+      // For other ports, just increment by 1
+      let port = basePort;
+      while (port < 65535) {
+        if (await this.isPortAvailable(port)) {
+          return port;
+        }
+        port++;
+      }
+    }
+
+    throw new Error(`No available port found starting from ${basePort}`);
+  }
+
   // Check for and track processes by name (more specific search)
-  checkAndTrackProcess(processName, trackFunction, trackFlag) {
-    if (trackFlag) {
-      log.info(`${processName} already tracked, skipping`);
+  checkAndTrackProcess(processName, trackFunction) {
+    // Double check if already tracked (safety measure)
+    if (processName === 'litd' && this.litdTracked) {
+      log.debug(`${processName} already tracked, skipping check`);
+      return;
+    }
+    if (processName === 'rgb-lightning-node' && this.rgbTracked) {
+      log.debug(`${processName} already tracked, skipping check`);
       return;
     }
 
@@ -38,13 +101,14 @@ class ExpressServer {
       searchPattern = `pgrep -f "${processName}"`;
     }
 
+    log.debug(`Searching for ${processName} process...`);
     exec(searchPattern, (err, stdout) => {
       if (!err && stdout.trim()) {
         const pids = stdout.trim().split('\n');
         // Only track the first (main) process
         const mainPid = parseInt(pids[0]);
         if (mainPid) {
-          log.info(`Found main ${processName} process with PID: ${mainPid}`);
+          log.info(`Found ${processName} process with PID: ${mainPid}`);
           
           // Create a mock process object to track the external process
           const mockProcess = {
@@ -68,13 +132,15 @@ class ExpressServer {
           
           // Register with process manager
           trackFunction(mockProcess);
-          
-          // Mark as tracked
-          if (processName === 'litd') {
-            this.litdTracked = true;
-          } else if (processName === 'rgb-lightning-node') {
-            this.rgbTracked = true;
-          }
+          log.info(`${processName} process successfully tracked and registered`);
+        }
+      } else {
+        log.warn(`No ${processName} process found - it may not have started yet`);
+        // Reset the tracking flag if process not found so we can retry later
+        if (processName === 'litd') {
+          this.litdTracked = false;
+        } else if (processName === 'rgb-lightning-node') {
+          this.rgbTracked = false;
         }
       }
     });
@@ -82,60 +148,67 @@ class ExpressServer {
 
   // Start Express server
   async start() {
-    return new Promise((resolve, reject) => {
-      const env = Object.assign({}, process.env);
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Find available port starting from 8091
+        const basePort = parseInt(this.port);
+        const availablePort = await this.findAvailablePort(basePort);
+        this.port = availablePort.toString();
+        
+        log.info(`Using port ${this.port} for Express server`);
 
-      env.ELECTRON_RUN = true;
-      // data path
-      env.LIT_NAME = "Lnfi-Node";
-      env.LIT_DATA_PATH = path.join(pathManager.getDataPath());
-      env.LIT_LOCAL_BASE_PATH = `${env.LIT_DATA_PATH}/${env.LIT_NAME}`;
-      env.LIT_ENABLE_TOR = false;
+        const env = Object.assign({}, process.env);
 
-      //port
-      env.LND_RPC_PORT = '10009';
-      env.LND_LISTEN_PORT = '9735';
-      env.LND_REST_PORT = '8080';
+        env.ELECTRON_RUN = true;
+        env.LINK_NAME = "Lnfi-Node";
+        env.LINK_DATA_PATH = path.join(pathManager.getDataPath());
+        env.ENABLE_TOR = false;
+        env.BINARY_PATH = path.join(pathManager.getBinaryPath());
+        env.LINK_OWNER = nostrService.getNpub(); 
+        env.LINK_HTTP_PORT = this.port;
+        // env.LINK_NETWORK = 'regtest';
+        //port
+        // env.LND_RPC_PORT = '10009';
+        // env.LND_LISTEN_PORT = '9735';
+        // env.LND_REST_PORT = '8080';
 
-      env.PORT = this.port;
-      env.LINK_HTTP_PORT = this.port;
-      env.BINARY_PATH = path.join(pathManager.getBinaryPath()); 
+        // Set LINK_OWNER to the Nostr npub
 
-      // Set LINK_OWNER to the Nostr npub
-      env.LINK_OWNER = nostrService.getNpub();
+        //rgb
+        // env.RGB_LISTENING_PORT = '3001';
+        // env.RGB_LDK_PEER_LISTENING_PORT = '9735';
 
-      //rgb
-      env.RGB_LISTENING_PORT = '3001';
-      env.RGB_LDK_PEER_LISTENING_PORT = '9736';
-      env.RGB_NETWORK = 'regtest';
+        // 设置 NODE_PATH 来包含 nodeserver 的 node_modules
+        const nodeModulesPath = pathManager.getNodeServerNodeModulesPath();
+        if (env.NODE_PATH) {
+          env.NODE_PATH = `${nodeModulesPath}${path.delimiter}${env.NODE_PATH}`;
+        } else {
+          env.NODE_PATH = nodeModulesPath;
+        }
 
-      // 设置 NODE_PATH 来包含 nodeserver 的 node_modules
-      const nodeModulesPath = pathManager.getNodeServerNodeModulesPath();
-      if (env.NODE_PATH) {
-        env.NODE_PATH = `${nodeModulesPath}${path.delimiter}${env.NODE_PATH}`;
-      } else {
-        env.NODE_PATH = nodeModulesPath;
+        const nodeserverPath = pathManager.getNodeServerPath();
+        const appJsPath = pathManager.getNodeServerAppJs();
+        
+        log.info(`Nodeserver path: ${nodeserverPath}`);
+        log.info(`App.js path: ${appJsPath}`);
+        log.info(`Node modules path: ${nodeModulesPath}`);
+        log.info(`Nodeserver exists: ${fs.existsSync(nodeserverPath)}`);
+        log.info(`App.js exists: ${fs.existsSync(appJsPath)}`);
+        log.info(`Node modules exists: ${fs.existsSync(nodeModulesPath)}`);
+
+        if (!fs.existsSync(appJsPath)) {
+          const errMsg = `Nodeserver app.js not found at: ${appJsPath}. Cannot start server.`;
+          log.error(errMsg);
+          reject(new Error(errMsg));
+          return;
+        }
+
+        // Start the server process directly
+        this._startServerProcess(nodeserverPath, appJsPath, env, resolve, reject);
+      } catch (error) {
+        log.error(`Failed to find available port: ${error.message}`);
+        reject(error);
       }
-
-      const nodeserverPath = pathManager.getNodeServerPath();
-      const appJsPath = pathManager.getNodeServerAppJs();
-      
-      log.info(`Nodeserver path: ${nodeserverPath}`);
-      log.info(`App.js path: ${appJsPath}`);
-      log.info(`Node modules path: ${nodeModulesPath}`);
-      log.info(`Nodeserver exists: ${fs.existsSync(nodeserverPath)}`);
-      log.info(`App.js exists: ${fs.existsSync(appJsPath)}`);
-      log.info(`Node modules exists: ${fs.existsSync(nodeModulesPath)}`);
-
-      if (!fs.existsSync(appJsPath)) {
-        const errMsg = `Nodeserver app.js not found at: ${appJsPath}. Cannot start server.`;
-        log.error(errMsg);
-        reject(new Error(errMsg));
-        return;
-      }
-
-      // Start the server process directly
-      this._startServerProcess(nodeserverPath, appJsPath, env, resolve, reject);
     });
   }
 
@@ -166,19 +239,29 @@ class ExpressServer {
           resolve(true);
         }
         
-        // Monitor for litd process start (only once)
-        if ((message.includes('starting litd') || message.includes('[litd]')) && !this.litdTracked) {
+        // Monitor for litd process start - only trigger on specific startup messages
+        if (!this.litdTracked && (
+          message.includes('starting litd') || 
+          message.includes('litd is ready') ||
+          (message.includes('[litd]') && message.includes('LiT version:'))
+        )) {
           log.info('Detected litd process starting');
+          this.litdTracked = true; // Set flag immediately to prevent duplicate triggers
           setTimeout(() => {
-            this.checkAndTrackProcess('litd', (process) => processManager.setLitdProcess(process), this.litdTracked);
+            this.checkAndTrackProcess('litd', (process) => processManager.setLitdProcess(process));
           }, 2000); // Give it more time to start
         }
         
-        // Monitor for RGB node process start (only once)
-        if ((message.includes('starting rgb') || message.includes('[rgb]') || message.includes('rgb-lightning-node')) && !this.rgbTracked) {
+        // Monitor for RGB node process start - only trigger on specific startup messages
+        if (!this.rgbTracked && (
+          message.includes('starting rgb') || 
+          message.includes('RGB node started') ||
+          (message.includes('rgb-lightning-node') && message.includes('started'))
+        )) {
           log.info('Detected RGB node process starting');
+          this.rgbTracked = true; // Set flag immediately to prevent duplicate triggers
           setTimeout(() => {
-            this.checkAndTrackProcess('rgb-lightning-node', (process) => processManager.setRgbNodeProcess(process), this.rgbTracked);
+            this.checkAndTrackProcess('rgb-lightning-node', (process) => processManager.setRgbNodeProcess(process));
           }, 2000); // Give it more time to start
         }
       });
@@ -244,4 +327,4 @@ class ExpressServer {
   }
 }
 
-module.exports = new ExpressServer(); 
+module.exports = new ExpressServer();

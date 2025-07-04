@@ -1,5 +1,6 @@
 const { app } = require('electron');
 global.crypto = require('crypto'); // Add global crypto object
+const { ipcMain } = require('electron');
 const log = require('./utils/logger');
 const pathManager = require('./utils/path-manager');
 const processManager = require('./services/process-manager');
@@ -9,6 +10,51 @@ const { registerNostrHandlers } = require('./ipc/nostr-handlers');
 
 let isShuttingDown = false;
 let processCheckInterval = null;
+
+// Register additional IPC handlers
+function registerServerHandlers() {
+  // Restart server handler
+  ipcMain.handle('restart-server', async () => {
+    try {
+      log.info('Restarting Express server via IPC...');
+      
+      // Stop current server
+      expressServer.stop();
+      
+      // Wait a bit for cleanup
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Start server again
+      await expressServer.start();
+      
+      log.info('Express server restarted successfully');
+      return { success: true, message: 'Server restarted successfully' };
+    } catch (error) {
+      log.error('Failed to restart server:', error);
+      return { success: false, message: error.message };
+    }
+  });
+
+  // Get server status
+  ipcMain.handle('get-server-status', async () => {
+    try {
+      return {
+        isRunning: expressServer.isRunning(),
+        port: expressServer.getPort()
+      };
+    } catch (error) {
+      log.error('Failed to get server status:', error);
+      return { isRunning: false, port: null };
+    }
+  });
+
+  // Get app version
+  ipcMain.handle('get-app-version', async () => {
+    return app.getVersion();
+  });
+
+  log.info('Server IPC handlers registered');
+}
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
@@ -130,6 +176,9 @@ async function initApp() {
     
     // Register IPC handlers
     registerNostrHandlers();
+    
+    // Register additional IPC handlers
+    registerServerHandlers();
     
     // Start periodic process checking (less frequent)
     processCheckInterval = setInterval(checkForRemainingProcesses, 10000); // Every 10 seconds

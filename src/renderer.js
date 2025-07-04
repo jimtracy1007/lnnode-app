@@ -2,6 +2,9 @@
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Renderer process loaded');
     
+    // Check server connection first
+    await checkServerConnection();
+    
     // Initialize application
     await initializeApp();
     
@@ -13,7 +16,225 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Load application version
     await loadAppVersion();
+    
+    // Set up periodic server health check
+    setupServerHealthCheck();
 });
+
+// Check server connection and handle reconnection
+async function checkServerConnection() {
+    const maxRetries = 10;
+    let retries = 0;
+    
+    while (retries < maxRetries) {
+        try {
+            // Try to fetch the root page to check server connectivity
+            const response = await fetch('/', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                },
+                cache: 'no-cache'
+            });
+            
+            if (response.ok) {
+                console.log('Server connection established');
+                hideConnectionError();
+                return true;
+            }
+        } catch (error) {
+            console.log(`Server connection attempt ${retries + 1}/${maxRetries} failed:`, error.message);
+            retries++;
+            
+            if (retries < maxRetries) {
+                showConnectionRetrying(retries, maxRetries);
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
+            }
+        }
+    }
+    
+    // If all retries failed, show error
+    showConnectionError();
+    return false;
+}
+
+// Show connection error message
+function showConnectionError() {
+    const errorDiv = document.createElement('div');
+    errorDiv.id = 'connection-error';
+    errorDiv.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            font-family: Arial, sans-serif;
+        ">
+            <div style="text-align: center; max-width: 500px; padding: 20px;">
+                <h2 style="color: #ff6b6b; margin-bottom: 20px;">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    Connection Error
+                </h2>
+                <p style="margin-bottom: 20px;">
+                    Unable to connect to Lightning Network Node server.
+                </p>
+                <p style="margin-bottom: 20px; color: #ffa500;">
+                    Error: ERR_CONNECTION_RESET
+                </p>
+                <p style="margin-bottom: 30px;">
+                    Please ensure the server is running and port 8091 is accessible.
+                </p>
+                <button onclick="location.reload()" style="
+                    background-color: #4CAF50;
+                    color: white;
+                    padding: 12px 24px;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 16px;
+                    margin-right: 10px;
+                ">
+                    Retry Connection
+                </button>
+                <button onclick="restartServer()" style="
+                    background-color: #ff9800;
+                    color: white;
+                    padding: 12px 24px;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 16px;
+                ">
+                    Restart Server
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(errorDiv);
+}
+
+// Show connection retry message
+function showConnectionRetrying(attempt, maxAttempts) {
+    let retryDiv = document.getElementById('connection-retry');
+    if (!retryDiv) {
+        retryDiv = document.createElement('div');
+        retryDiv.id = 'connection-retry';
+        document.body.appendChild(retryDiv);
+    }
+    
+    retryDiv.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            font-family: Arial, sans-serif;
+        ">
+            <div style="text-align: center; max-width: 400px; padding: 20px;">
+                <h2 style="color: #ffa500; margin-bottom: 20px;">
+                    <i class="fas fa-spinner fa-spin"></i> 
+                    Reconnecting...
+                </h2>
+                <p style="margin-bottom: 20px;">
+                    Attempting to reconnect to server
+                </p>
+                <p style="margin-bottom: 20px;">
+                    Attempt ${attempt} of ${maxAttempts}
+                </p>
+                <div style="
+                    width: 100%;
+                    background-color: #333;
+                    border-radius: 10px;
+                    overflow: hidden;
+                    margin-bottom: 20px;
+                ">
+                    <div style="
+                        width: ${(attempt / maxAttempts) * 100}%;
+                        height: 20px;
+                        background-color: #4CAF50;
+                        transition: width 0.3s ease;
+                    "></div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Hide connection error messages
+function hideConnectionError() {
+    const errorDiv = document.getElementById('connection-error');
+    const retryDiv = document.getElementById('connection-retry');
+    
+    if (errorDiv) {
+        errorDiv.remove();
+    }
+    if (retryDiv) {
+        retryDiv.remove();
+    }
+}
+
+// Restart server function
+async function restartServer() {
+    try {
+        if (window.electronAPI && window.electronAPI.restartServer) {
+            showConnectionRetrying(1, 1);
+            await window.electronAPI.restartServer();
+            
+            // Wait a bit for server to restart, then retry connection
+            setTimeout(async () => {
+                const connected = await checkServerConnection();
+                if (connected) {
+                    location.reload();
+                }
+            }, 3000);
+        } else {
+            console.error('Restart server API not available');
+        }
+    } catch (error) {
+        console.error('Failed to restart server:', error);
+        showConnectionError();
+    }
+}
+
+// Set up periodic server health check
+function setupServerHealthCheck() {
+    setInterval(async () => {
+        try {
+            const response = await fetch('/', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                },
+                cache: 'no-cache'
+            });
+            
+            if (!response.ok) {
+                console.warn('Server health check failed');
+                await checkServerConnection();
+            }
+        } catch (error) {
+            console.warn('Server health check error:', error.message);
+            await checkServerConnection();
+        }
+    }, 30000); // Check every 30 seconds
+}
 
 // Initialize application
 async function initializeApp() {

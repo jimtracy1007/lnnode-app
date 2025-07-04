@@ -361,8 +361,34 @@ class WindowManager {
     this.mainWindow.webContents.on('did-fail-load', async (event, errorCode, errorDescription) => {
       log.error(`Page failed to load: ${errorDescription} (${errorCode})`);
       
-      // If page fails to load, show a simple error page
-      if (errorCode !== -3 && this.mainWindow) { // -3 is a load cancellation, not usually an error
+      // If page fails to load due to connection issues, try to restart server
+      if (errorCode === -102 || errorCode === -7) { // CONNECTION_REFUSED or TIMED_OUT
+        log.info('Connection error detected, checking server status...');
+        
+        // Check if server is still running
+        if (!expressServer.isRunning()) {
+          log.info('Server is not running, attempting to restart...');
+          try {
+            await expressServer.start();
+            log.info('Server restarted, reloading page...');
+            setTimeout(() => {
+              if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+                this.loadAppUrl();
+              }
+            }, 2000);
+          } catch (error) {
+            log.error('Failed to restart server:', error);
+            await this.showConnectionErrorScreen(errorDescription);
+          }
+        } else {
+          log.info('Server is running but page failed to load, retrying...');
+          setTimeout(() => {
+            if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+              this.loadAppUrl();
+            }
+          }, 3000);
+        }
+      } else if (errorCode !== -3) { // -3 is a load cancellation, not usually an error
         await this.showConnectionErrorScreen(errorDescription);
       }
     });

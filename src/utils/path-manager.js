@@ -30,7 +30,7 @@ class PathManager {
   }
 
   getNodeServerAppJs() {
-    return path.join(this.nodeserverPath, 'app.js');
+    return path.join(this.nodeserverPath, 'start.js');
   }
 
   getNodeServerNodeModulesPath() {
