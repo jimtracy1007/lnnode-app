@@ -162,7 +162,7 @@ class ExpressServer {
         env.ELECTRON_RUN = true;
         env.LINK_NAME = "Lnfi-Node";
         env.LINK_DATA_PATH = path.join(pathManager.getDataPath());
-        env.ENABLE_TOR = false;
+        env.ENABLE_TOR = true;
         env.BINARY_PATH = path.join(pathManager.getBinaryPath());
         env.LINK_OWNER = nostrService.getNpub(); 
         env.LINK_HTTP_PORT = this.port;
@@ -295,7 +295,7 @@ class ExpressServer {
           log.warn('Express server did not report ready status within timeout period');
           resolve(false); // Don't reject, let the app continue trying to load
         }
-      }, 5000); // 5 second timeout
+      }, 5*1000); // 5 second timeout
       
     } catch (error) {
       log.error(`Exception when starting Express server: ${error.message}`);

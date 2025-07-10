@@ -10,14 +10,17 @@
     "dev:full": "concurrently \"npm run dev:server\" \"npm run dev\"",
     "build": "electron-builder",
     "build:mac": "electron-builder --mac --x64 --arm64 ",
-    "build:mac-amd": "electron-builder --mac --x64 ",
+    "build:mac-amd": "npm run rebuild:x64 && electron-builder --mac --x64",
+    "build:mac-arm": "npm run rebuild:arm64 && electron-builder --mac --arm64",
     "build:win": "electron-builder --win",
     "build:linux": "electron-builder --linux",
     "pack": "electron-builder --dir",
     "dist": "electron-builder --publish=never",
     "server:install": "cd nodeserver && yarn install",
     "server:start": "cd nodeserver && node app.js",
-    "postinstall": "electron-builder install-app-deps && cd nodeserver && npm install"
+    "postinstall": "electron-builder install-app-deps && cd nodeserver && npm install",
+    "rebuild:x64": "electron-rebuild --arch=x64 --module-dir=nodeserver",
+    "rebuild:arm64": "electron-rebuild --arch=arm64 --module-dir=nodeserver"
   },
   "keywords": [
     "electron",
@@ -29,6 +32,7 @@
   "author": "Lnfi-Network",
   "license": "MIT",
   "devDependencies": {
+    "@electron/rebuild": "^4.0.1",
     "concurrently": "^8.2.2",
     "electron": "^28.0.0",
     "electron-builder": "^24.9.1"
@@ -60,7 +64,7 @@
     "asarUnpack": [
       "**/nodeserver/**/*"
     ],
-    "npmRebuild": true,
+    "npmRebuild": false,
     "nodeGypRebuild": false,
     "buildDependenciesFromSource": false,
     "asar": true,
