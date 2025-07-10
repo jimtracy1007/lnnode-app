@@ -166,6 +166,7 @@ class ExpressServer {
         env.BINARY_PATH = path.join(pathManager.getBinaryPath());
         env.LINK_OWNER = nostrService.getNpub(); 
         env.LINK_HTTP_PORT = this.port;
+        // env.HTTPS_PROXY = "127.0.0.1:33210";
         // env.LINK_NETWORK = 'regtest';
         //port
         // env.LND_RPC_PORT = '10009';
