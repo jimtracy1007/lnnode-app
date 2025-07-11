@@ -162,7 +162,7 @@ class ExpressServer {
         env.ELECTRON_RUN = true;
         env.LINK_NAME = "Lnfi-Node";
         env.LINK_DATA_PATH = path.join(pathManager.getDataPath());
-        env.ENABLE_TOR = true;
+        env.ENABLE_TOR = false;
         env.BINARY_PATH = path.join(pathManager.getBinaryPath());
         env.LINK_OWNER = nostrService.getNpub(); 
         env.LINK_HTTP_PORT = this.port;

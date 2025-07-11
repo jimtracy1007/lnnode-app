@@ -40,7 +40,23 @@ class PathManager {
   getBinaryPath() {
     const platform = process.platform;
     const arch = process.arch;
-    return path.join(this.binaryPath, `${platform}-${arch}`);
+    
+    // 修复 Windows 平台路径格式：win32 -> win
+    let platformName = platform;
+    if (platform === 'win32') {
+      platformName = 'win';
+    } else if (platform === 'darwin') {
+      platformName = 'darwin';
+    } else if (platform === 'linux') {
+      platformName = 'linux';
+    }
+    
+    const binaryDir = `${platformName}-${arch}`;
+    const fullPath = path.join(this.binaryPath, binaryDir);
+    
+    log.info(`Binary path: platform=${platform}, arch=${arch}, mapped=${binaryDir}, full=${fullPath}`);
+    
+    return fullPath;
   }
 
   getDataPath() {

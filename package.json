@@ -1,6 +1,6 @@
 {
   "name": "LNNode",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "description": "Lightning Network Node Application built with Electron",
   "main": "src/main.js",
   "scripts": {
@@ -10,9 +10,9 @@
     "dev:full": "concurrently \"npm run dev:server\" \"npm run dev\"",
     "build": "electron-builder",
     "build:mac": "electron-builder --mac --x64 --arm64 ",
-    "build:mac-amd": "npm run rebuild:x64 && electron-builder --mac --x64",
-    "build:mac-arm": "npm run rebuild:arm64 && electron-builder --mac --arm64",
-    "build:win": "electron-builder --win",
+    "build:mac-amd": "cd nodeserver && npm run rebuild:sqlite3:x64 && cd .. && npm run rebuild:x64 && electron-builder --mac --x64",
+    "build:mac-arm": "cd nodeserver && npm run rebuild:sqlite3:arm64 && cd .. && npm run rebuild:arm64 && electron-builder --mac --arm64",
+    "build:win": "cd nodeserver && npm run rebuild:sqlite3:win:x64 && cd .. && npm run rebuild:win:x64 && electron-builder --win",
     "build:linux": "electron-builder --linux",
     "pack": "electron-builder --dir",
     "dist": "electron-builder --publish=never",
@@ -20,7 +20,8 @@
     "server:start": "cd nodeserver && node app.js",
     "postinstall": "electron-builder install-app-deps && cd nodeserver && npm install",
     "rebuild:x64": "electron-rebuild --arch=x64 --module-dir=nodeserver",
-    "rebuild:arm64": "electron-rebuild --arch=arm64 --module-dir=nodeserver"
+    "rebuild:arm64": "electron-rebuild --arch=arm64 --module-dir=nodeserver",
+    "rebuild:win:x64": "electron-rebuild --arch=x64 --platform=win32 --module-dir=nodeserver"
   },
   "keywords": [
     "electron",
@@ -53,7 +54,10 @@
       "src/**/*",
       "assets/**/*",
       "nodeserver/**/*",
-      "!nodeserver/node_modules"
+      "!nodeserver/node_modules/.bin",
+      "!nodeserver/node_modules/**/*.{md,txt,yml,yaml}",
+      "!nodeserver/node_modules/**/test",
+      "!nodeserver/node_modules/**/tests"
     ],
     "extraResources": [
       {
@@ -102,6 +106,15 @@
           "target": "nsis",
           "arch": [
             "x64"
+          ]
+        }
+      ],
+      "extraFiles": [
+        {
+          "from": "bin/win-${arch}/",
+          "to": "Resources/bin/win-${arch}/",
+          "filter": [
+            "**/*"
           ]
         }
       ]
