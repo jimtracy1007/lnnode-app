@@ -24,6 +24,7 @@ class WindowManager {
           enableRemoteModule: false,
           preload: path.join(__dirname, '..', 'preload.js'),
           webSecurity: false, 
+          nodeIntegrationInSubFrames: true, // Allow preload script in subframes
           allowRunningInsecureContent: false,
           experimentalFeatures: false,
           backgroundColor: '#1e1e1e'
