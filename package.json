@@ -1,9 +1,10 @@
 {
   "name": "LNNode",
-  "version": "0.1.3",
+  "version": "0.1.0",
   "description": "Lightning Network Node Application built with Electron",
   "main": "src/main.js",
   "scripts": {
+    "preinstall": "node ./scripts/fetch-binaries.js --all",
     "start": "electron .",
     "dev": "electron . --dev",
     "dev:server": "cd nodeserver && node app.js",

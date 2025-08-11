@@ -114,4 +114,4 @@ wallet.dat
 *.key
 *.pem 
 
-bin/
+bin
