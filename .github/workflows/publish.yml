@@ -1,0 +1,128 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-mac-amd:
+    runs-on: macos-latest
+    environment: prod-deploy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: "yarn"
+
+      - name: Install deps
+        run: yarn install
+
+      - name: Build (mac-amd)
+        run: npm run build:mac-amd
+
+      - name: Upload artifacts (mac-amd)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-mac-amd
+          path: |
+            dist/
+            !dist/**/*.map
+
+  build-mac-arm:
+    runs-on: macos-latest
+    environment: prod-deploy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: "yarn"
+
+      - name: Install deps
+        run: yarn install
+
+      - name: Build (mac-arm)
+        run: npm run build:mac-arm
+
+      - name: Upload artifacts (mac-arm)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-mac-arm
+          path: |
+            dist/
+            !dist/**/*.map
+
+  release:
+    runs-on: ubuntu-latest
+    needs:
+      - build-mac-amd
+      - build-mac-arm
+    environment: prod-deploy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: "yarn"
+
+      - name: Download artifacts (mac-amd)
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-mac-amd
+          path: dist/mac-amd
+
+      - name: Download artifacts (mac-arm)
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-mac-arm
+          path: dist/mac-arm
+
+      - name: Generate build hash
+        id: build-hash
+        run: |
+          BUILD_HASH=$(find dist -type f -exec sha256sum {} \; | sha256sum | cut -d' ' -f1)
+          echo "build_hash=$BUILD_HASH" >> $GITHUB_OUTPUT
+          echo "Build hash: $BUILD_HASH"
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          mkdir -p dist
+          echo "{\"version\":\"$PACKAGE_VERSION\",\"buildHash\":\"$BUILD_HASH\",\"buildTime\":\"$BUILD_TIME\"}" > dist/build-info.json
+
+      - name: Upload combined build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-${{ steps.build-hash.outputs.build_hash }}
+          path: |
+            dist/
+            !dist/**/*.map
+
+      - name: Read package version
+        id: pkg-version
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          echo "version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release and upload assets
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.pkg-version.outputs.version }}
+          name: Release v${{ steps.pkg-version.outputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            dist/**/*

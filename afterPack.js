@@ -6,10 +6,10 @@ exports.default = async function(context) {
   
   const { electronPlatformName, arch, appOutDir } = context;
   
-  // 打印调试信息
+  // Print debug information
   console.log(`🔍 Context: platform=${electronPlatformName}, arch=${arch}, archAsString=${typeof arch === 'number' ? (arch === 1 ? 'x64' : arch === 3 ? 'arm64' : 'unknown') : arch}`);
   
-  // 处理架构值（可能是数字）
+  // Handle architecture value (can be a number)
   let actualArch;
   if (typeof arch === 'number') {
     actualArch = arch === 1 ? 'x64' : arch === 3 ? 'arm64' : 'unknown';
@@ -18,7 +18,7 @@ exports.default = async function(context) {
   }
   
   if (electronPlatformName === 'darwin') {
-    // 确保 SQLite 绑定文件正确
+    // Ensure SQLite binding file is correct
     const nodeModulesPath = path.join(appOutDir, 'LN-Link.app/Contents/Resources/nodeserver/node_modules');
     const sqliteBindingPath = path.join(nodeModulesPath, 'sqlite3/lib/binding');
     
@@ -33,7 +33,7 @@ exports.default = async function(context) {
       if (!bindingExists) {
         console.warn(`⚠️  Warning: SQLite binding for ${actualArch} not found!`);
         
-        // 列出实际存在的绑定
+        // List actual available bindings
         const availableBindings = fs.readdirSync(sqliteBindingPath);
         console.log(`📋 Available bindings: ${availableBindings.join(', ')}`);
       }
@@ -41,7 +41,7 @@ exports.default = async function(context) {
       console.warn(`⚠️  Warning: SQLite binding path not found: ${sqliteBindingPath}`);
     }
   } else if (electronPlatformName === 'win32') {
-    // Windows 平台的 SQLite3 绑定处理
+    // SQLite3 binding handling for Windows platform
     const nodeModulesPath = path.join(appOutDir, 'resources/nodeserver/node_modules');
     const sqliteBindingPath = path.join(nodeModulesPath, 'sqlite3/lib/binding');
     
@@ -61,12 +61,12 @@ exports.default = async function(context) {
       if (!bindingExists) {
         console.warn(`⚠️  Warning: SQLite binding for Windows ${actualArch} not found!`);
         
-        // 列出实际存在的绑定
+        // List actual available bindings
         try {
           const availableBindings = fs.readdirSync(sqliteBindingPath);
           console.log(`📋 Available bindings: ${availableBindings.join(', ')}`);
           
-          // 尝试查找任何 Windows 绑定文件
+          // Attempt to find any Windows binding files
           const windowsBindings = availableBindings.filter(binding => 
             binding.includes('win32') || binding.includes('windows')
           );
@@ -74,7 +74,7 @@ exports.default = async function(context) {
           if (windowsBindings.length > 0) {
             console.log(`🔍 Found Windows bindings: ${windowsBindings.join(', ')}`);
             
-            // 如果找到其他 Windows 绑定，尝试复制为期望的名称
+            // If other Windows bindings are found, try to copy to the expected name
             const sourceBinding = windowsBindings.find(binding => 
               binding.includes(actualArch) || binding.includes('x64')
             );
@@ -100,12 +100,12 @@ exports.default = async function(context) {
     } else {
       console.warn(`⚠️  Warning: SQLite binding path not found: ${sqliteBindingPath}`);
       
-      // 尝试查找 SQLite3 模块
+      // Attempt to find SQLite3 module
       const sqlite3ModulePath = path.join(nodeModulesPath, 'sqlite3');
       if (fs.existsSync(sqlite3ModulePath)) {
         console.log(`📦 SQLite3 module found at: ${sqlite3ModulePath}`);
         
-        // 创建 binding 目录如果不存在
+        // Create binding directory if it doesn't exist
         if (!fs.existsSync(sqliteBindingPath)) {
           try {
             fs.mkdirSync(sqliteBindingPath, { recursive: true });

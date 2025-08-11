@@ -1,70 +1,85 @@
-# Lightning Network Node App
+# LN-Link (Lightning Network Node App)
 
-一个基于 Electron.js 构建的闪电网络节点管理应用程序。
+An Electron-based desktop application for managing a Lightning Network node with an integrated local HTTP server and a modern UI.
 
-## 功能特性
+### Key Features
 
-- 🚀 现代化的用户界面
-- ⚡ 闪电网络节点管理
-- 💰 钱包功能（开发中）
-- 🔗 通道管理（开发中）
-- 📊 实时数据仪表板
-- 🌙 支持深色/浅色主题
-- 🔒 安全的进程间通信
-- 📱 响应式设计
+- Modern, responsive UI (Dashboard, Wallet, Channels, Transactions, Settings)
+- Integrated local server ("nodeserver") launched and managed by Electron
+- Process tracking and graceful cleanup for child processes (litd, rgb-lightning-node)
+- Basic Nostr integration (window.nostr) for keys and encryption helpers
+- Light/Dark theme support
+- Auto-update ready (configured via electron-updater)
 
-## 技术栈
+### Tech Stack
 
-- **Electron**: 跨平台桌面应用框架
-- **HTML5/CSS3**: 现代化的用户界面
-- **JavaScript**: 应用逻辑和交互
-- **Node.js**: 后端服务和 API
+- Electron (Main/Preload/Renderer)
+- Node.js (integrated Express server under `nodeserver/`)
+- HTML/CSS/JavaScript for the UI
 
-## 系统要求
+## Requirements
 
-- Node.js 16.0 或更高版本
-- npm 或 yarn 包管理器
-- macOS 10.15+, Windows 10+, 或 Linux
+- Node.js 19+ (Node 20 LTS recommended)
+- npm (or yarn)
+- macOS 10.15+, Windows 10+, or Linux
 
-## 安装和运行
+nodeserver enforces Node >= 19 via engines, so use at least Node 19 for development and builds.
 
-### 1. 克隆项目（如果从 Git 仓库）
+## Getting Started
+
+### 1) Clone
 
 ```bash
 git clone <repository-url>
 cd lnnode-app
 ```
 
-### 2. 安装依赖
+### 2) Install dependencies
 
 ```bash
 npm install
 ```
 
-### 3. 开发模式运行
+The postinstall script installs dependencies for `nodeserver/` as well.
+
+### 3) Run (development)
+
+Option A – run Electron which will spawn the internal server automatically:
 
 ```bash
 npm run dev
 ```
 
-### 4. 生产模式运行
+Option B – run both Electron and the server separately (useful for debugging the server in isolation):
+
+```bash
+npm run dev:full
+```
+
+Notes:
+- The Electron main process starts the server and chooses an available port, starting from 8091.
+- When running the server standalone (`npm run dev:server`), `nodeserver` defaults to `LINK_HTTP_PORT=8090` unless overridden.
+
+### 4) Run (production)
 
 ```bash
 npm start
 ```
 
-## 构建应用
+## Build & Distribution
 
-### 构建所有平台
+This project uses `electron-builder`.
+
+Build for all targets configured:
 
 ```bash
 npm run build
 ```
 
-### 构建特定平台
+Platform-specific builds:
 
 ```bash
-# macOS
+# macOS (x64 + arm64)
 npm run build:mac
 
 # Windows
@@ -74,133 +89,117 @@ npm run build:win
 npm run build:linux
 ```
 
-### 打包（不分发）
+Local package directory only (no installer):
 
 ```bash
 npm run pack
 ```
 
-## 项目结构
+Native module rebuild helpers (when needed for packaging):
+
+```bash
+# macOS x64
+npm run build:mac-amd
+
+# macOS arm64
+npm run build:mac-arm
+
+# Windows x64
+npm run build:win
+```
+
+The `afterPack.js` script validates SQLite3 bindings inside the packaged `nodeserver/node_modules` and logs any anomalies to help diagnose packaging issues, especially across architectures.
+
+## Project Structure
 
 ```
 lnnode-app/
-├── src/                    # 源代码目录
-│   ├── main.js            # Electron 主进程
-│   ├── preload.js         # 预加载脚本
-│   ├── index.html         # 主页面
-│   ├── styles.css         # 样式文件
-│   └── renderer.js        # 渲染进程脚本
-├── assets/                # 资源文件
-├── dist/                  # 构建输出目录
-├── package.json           # 项目配置
-└── README.md             # 项目说明
+├─ src/
+│  ├─ main.js               # Electron main process (window + lifecycle + server IPC)
+│  ├─ preload.js            # Safe IPC bridge for renderer (window.electronAPI, window.nostr)
+│  ├─ renderer.js           # UI logic, navigation, connection checks
+│  ├─ index.html            # Main UI shell
+│  ├─ styles.css            # Styling and theme
+│  ├─ services/
+│  │  ├─ express-server.js  # Spawns and monitors the internal server (nodeserver)
+│  │  └─ process-manager.js # Tracks/kills child processes (incl. litd/rgb)
+│  ├─ ui/window-manager.js  # Window creation, loading/error screens, URL loading
+│  ├─ ipc/nostr-handlers.js # IPC handlers for Nostr features
+│  └─ utils/
+│     ├─ path-manager.js    # Resolves app paths (resources/bin/nodeserver, etc.)
+│     └─ logger.js          # Logging helper
+├─ nodeserver/              # Integrated Express server
+│  ├─ app.js                # Express entrypoint (serves public/initOwner.html, mounts routes)
+│  ├─ api/                  # API routes (LND wrappers)
+│  ├─ business/             # Business logic (init, jobs, services)
+│  ├─ constants/            # Constants and port config (LINK_HTTP_PORT)
+│  ├─ public/               # Static assets (initOwner.html, favicon)
+│  └─ package.json          # Server scripts, module aliases, engines
+├─ assets/                  # App icons and assets
+├─ afterPack.js             # Post-pack checks (e.g., sqlite bindings)
+├─ package.json             # Electron app config + builder config
+└─ README.md
 ```
 
-## 开发指南
+## How it Works (High-level)
 
-### 主要文件说明
+- On startup, the Electron main process creates a window and shows a loading screen.
+- It then launches the internal HTTP server (`nodeserver/app.js`) as a child process and picks an available port starting at 8091.
+- Once the server is ready, the window loads `http://127.0.0.1:<port>`.
+- If the page fails to load, the app can attempt to restart the server and display an error/connection screen.
+- Child processes (e.g., `litd`, `rgb-lightning-node`) can be detected and tracked to ensure clean shutdown.
 
-- **src/main.js**: Electron 主进程，负责创建窗口和应用生命周期管理
-- **src/preload.js**: 预加载脚本，提供安全的 API 接口
-- **src/renderer.js**: 渲染进程脚本，处理用户界面交互
-- **src/index.html**: 主页面结构
-- **src/styles.css**: 应用样式，支持深色主题
+## Security Notes
 
-### 添加新功能
+- `nodeIntegration` is disabled; `contextIsolation` is enabled.
+- Only a minimal, explicit API is exposed via `preload.js` using `contextBridge`.
+- Validate any user input at both renderer and server layers.
 
-1. 在 `src/renderer.js` 中添加前端逻辑
-2. 在 `src/main.js` 中添加主进程功能
-3. 通过 `src/preload.js` 暴露安全的 API
-4. 更新 `src/index.html` 和 `src/styles.css` 以支持新的 UI
+## Environment & Ports
 
-### 安全最佳实践
+- Electron will set environment variables for the server when it forks it (e.g., `LINK_HTTP_PORT`, `BINARY_PATH`, `LINK_DATA_PATH`).
+- Standalone server runs on `LINK_HTTP_PORT` (defaults to 8090) defined in `nodeserver/constants/index.js`.
+- When Electron manages the server, it finds the first available port from [8091..8096] then increments if necessary.
 
-- 禁用 `nodeIntegration`
-- 启用 `contextIsolation`
-- 使用 `preload.js` 安全地暴露 API
-- 验证所有用户输入
-- 使用 HTTPS 进行网络通信
+## Nostr Integration
 
-## 配置选项
+The preload exposes `window.nostr` methods such as:
 
-### Electron Builder 配置
+- `getPublicKey()`, `getNpub()`
+- `nip04.encrypt/decrypt()`, `nip44.encrypt/decrypt()`
+- `enable()`, `isEnabled()`
 
-在 `package.json` 中的 `build` 字段可以配置：
+See `src/preload.js` and `src/ipc/nostr-handlers.js` for details.
 
-- 应用图标
-- 安装包格式
-- 代码签名
-- 自动更新
+## Troubleshooting
 
-### 应用设置
+- Connection overlay appears if the renderer cannot reach the server. You can try "Restart Server" from the overlay.
+- If builds fail due to native modules (e.g., sqlite3):
+  - Use the platform-specific rebuild scripts before packaging
+  - Check `afterPack.js` logs to ensure bindings exist for your architecture
+- On exit, the app attempts to kill tracked child processes. If any remain, check OS process lists (`litd`, `rgb-lightning-node`).
 
-用户可以在设置页面配置：
+## Scripts (root)
 
-- 节点网络（主网/测试网）
-- 应用主题
-- 语言设置
-- 节点连接参数
+- `npm run dev` – Electron dev with integrated server
+- `npm run dev:server` – Start server only (from `nodeserver/`)
+- `npm run dev:full` – Start server and Electron concurrently
+- `npm run build` – Build using electron-builder
+- `npm run pack` – Package dir without publishing
 
-## 故障排除
+## License
 
-### 常见问题
+MIT
 
-1. **应用无法启动**
-   - 检查 Node.js 版本是否符合要求
-   - 确保所有依赖已正确安装
+## Roadmap (short)
 
-2. **构建失败**
-   - 清除 node_modules 并重新安装
-   - 检查 electron-builder 配置
-
-3. **界面显示异常**
-   - 检查浏览器控制台错误
-   - 验证 CSS 文件是否正确加载
-
-### 调试模式
-
-在开发模式下，应用会自动打开开发者工具：
-
-```bash
-npm run dev
-```
-
-## 贡献指南
-
-1. Fork 项目
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开 Pull Request
-
-## 许可证
-
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
-
-## 联系方式
-
-- 项目主页: [GitHub Repository]
-- 问题反馈: [GitHub Issues]
-- 邮箱: your.email@example.com
-
-## 更新日志
-
-### v1.0.0 (当前版本)
-
-- ✨ 初始版本发布
-- 🎨 现代化用户界面
-- ⚡ 基础闪电网络功能框架
-- 🔧 完整的开发环境配置
-
-## 路线图
-
-- [ ] 集成真实的闪电网络节点
-- [ ] 实现钱包功能
-- [ ] 添加通道管理
-- [ ] 支持多语言
-- [ ] 添加数据可视化
-- [ ] 实现自动更新
+- Real Lightning node integration flows in UI
+- Wallet features
+- Channel management
+- i18n (multi-language)
+- Data visualization
+- Auto-update configuration
 
 ---
 
-**注意**: 这是一个开发中的项目，某些功能可能尚未完全实现。请查看项目状态和路线图了解最新进展。 
+This project is under active development; some features are placeholders in the UI until wired to backend services.
