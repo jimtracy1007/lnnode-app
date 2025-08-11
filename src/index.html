@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,196 +8,196 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- 顶部导航栏 -->
+        <!-- Top Navigation Bar -->
         <header class="header">
             <div class="header-content">
                 <h1 class="app-title">⚡ LN Node App</h1>
                 <div class="header-actions">
-                    <button class="btn btn-secondary" id="settingsBtn">设置</button>
+                    <button class="btn btn-secondary" id="settingsBtn">Settings</button>
                     <div class="status-indicator" id="nodeStatus">
                         <span class="status-dot offline"></span>
-                        <span class="status-text">离线</span>
+                        <span class="status-text">Offline</span>
                     </div>
                 </div>
             </div>
         </header>
 
-        <!-- 主要内容区域 -->
+        <!-- Main Content Area -->
         <main class="main-content">
-            <!-- 侧边栏 -->
+            <!-- Sidebar -->
             <aside class="sidebar">
                 <nav class="nav-menu">
                     <ul>
                         <li><a href="#dashboard" class="nav-link active" data-section="dashboard">
                             <span class="nav-icon">📊</span>
-                            <span class="nav-text">仪表板</span>
+                            <span class="nav-text">Dashboard</span>
                         </a></li>
                         <li><a href="#wallet" class="nav-link" data-section="wallet">
                             <span class="nav-icon">💰</span>
-                            <span class="nav-text">钱包</span>
+                            <span class="nav-text">Wallet</span>
                         </a></li>
                         <li><a href="#channels" class="nav-link" data-section="channels">
                             <span class="nav-icon">🔗</span>
-                            <span class="nav-text">通道</span>
+                            <span class="nav-text">Channels</span>
                         </a></li>
                         <li><a href="#transactions" class="nav-link" data-section="transactions">
                             <span class="nav-icon">📋</span>
-                            <span class="nav-text">交易记录</span>
+                            <span class="nav-text">Transactions</span>
                         </a></li>
                         <li><a href="#settings" class="nav-link" data-section="settings">
                             <span class="nav-icon">⚙️</span>
-                            <span class="nav-text">设置</span>
+                            <span class="nav-text">Settings</span>
                         </a></li>
                     </ul>
                 </nav>
             </aside>
 
-            <!-- 内容区域 -->
+            <!-- Content Area -->
             <section class="content">
-                <!-- 仪表板页面 -->
+                <!-- Dashboard Page -->
                 <div id="dashboard" class="page active">
                     <div class="page-header">
-                        <h2>仪表板</h2>
-                        <p>Lightning Network 节点概览</p>
+                        <h2>Dashboard</h2>
+                        <p>Lightning Network Node Overview</p>
                     </div>
                     
                     <div class="stats-grid">
                         <div class="stat-card">
                             <div class="stat-icon">💰</div>
                             <div class="stat-content">
-                                <h3>余额</h3>
+                                <h3>Balance</h3>
                                 <p class="stat-value">0.00000000 BTC</p>
-                                <span class="stat-label">链上余额</span>
+                                <span class="stat-label">On-chain Balance</span>
                             </div>
                         </div>
                         
                         <div class="stat-card">
                             <div class="stat-icon">⚡</div>
                             <div class="stat-content">
-                                <h3>闪电网络余额</h3>
+                                <h3>Lightning Network Balance</h3>
                                 <p class="stat-value">0 sats</p>
-                                <span class="stat-label">可用于支付</span>
+                                <span class="stat-label">Spendable</span>
                             </div>
                         </div>
                         
                         <div class="stat-card">
                             <div class="stat-icon">🔗</div>
                             <div class="stat-content">
-                                <h3>活跃通道</h3>
+                                <h3>Active Channels</h3>
                                 <p class="stat-value">0</p>
-                                <span class="stat-label">已建立的通道</span>
+                                <span class="stat-label">Channels Established</span>
                             </div>
                         </div>
                         
                         <div class="stat-card">
                             <div class="stat-icon">📊</div>
                             <div class="stat-content">
-                                <h3>节点状态</h3>
-                                <p class="stat-value">离线</p>
-                                <span class="stat-label">同步状态</span>
+                                <h3>Node Status</h3>
+                                <p class="stat-value">Offline</p>
+                                <span class="stat-label">Sync Status</span>
                             </div>
                         </div>
                     </div>
 
                     <div class="recent-activity">
-                        <h3>最近活动</h3>
+                        <h3>Recent Activity</h3>
                         <div class="activity-list">
                             <div class="activity-item">
                                 <div class="activity-icon">ℹ️</div>
                                 <div class="activity-content">
-                                    <p>欢迎使用 Lightning Network 节点应用</p>
-                                    <span class="activity-time">刚刚</span>
+                                    <p>Welcome to Lightning Network Node App</p>
+                                    <span class="activity-time">Just now</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 钱包页面 -->
+                <!-- Wallet Page -->
                 <div id="wallet" class="page">
                     <div class="page-header">
-                        <h2>钱包</h2>
-                        <p>管理你的比特币和闪电网络资金</p>
+                        <h2>Wallet</h2>
+                        <p>Manage your Bitcoin and Lightning Network funds</p>
                     </div>
                     
                     <div class="wallet-actions">
-                        <button class="btn btn-primary">接收</button>
-                        <button class="btn btn-primary">发送</button>
-                        <button class="btn btn-secondary">生成地址</button>
+                        <button class="btn btn-primary">Receive</button>
+                        <button class="btn btn-primary">Send</button>
+                        <button class="btn btn-secondary">Generate Address</button>
                     </div>
                     
                     <div class="wallet-info">
-                        <p>钱包功能正在开发中...</p>
+                        <p>Wallet features are under development...</p>
                     </div>
                 </div>
 
-                <!-- 通道页面 -->
+                <!-- Channels Page -->
                 <div id="channels" class="page">
                     <div class="page-header">
-                        <h2>通道管理</h2>
-                        <p>管理闪电网络通道</p>
+                        <h2>Channel Management</h2>
+                        <p>Manage Lightning Network Channels</p>
                     </div>
                     
                     <div class="channel-actions">
-                        <button class="btn btn-primary">打开通道</button>
-                        <button class="btn btn-secondary">关闭通道</button>
+                        <button class="btn btn-primary">Open Channel</button>
+                        <button class="btn btn-secondary">Close Channel</button>
                     </div>
                     
                     <div class="channels-list">
-                        <p>暂无活跃通道</p>
+                        <p>No active channels yet.</p>
                     </div>
                 </div>
 
-                <!-- 交易记录页面 -->
+                <!-- Transactions Page -->
                 <div id="transactions" class="page">
                     <div class="page-header">
-                        <h2>交易记录</h2>
-                        <p>查看所有交易历史</p>
+                        <h2>Transaction History</h2>
+                        <p>View all transaction history</p>
                     </div>
                     
                     <div class="transactions-list">
-                        <p>暂无交易记录</p>
+                        <p>No transaction records yet.</p>
                     </div>
                 </div>
 
-                <!-- 设置页面 -->
+                <!-- Settings Page -->
                 <div id="settings" class="page">
                     <div class="page-header">
-                        <h2>设置</h2>
-                        <p>配置应用和节点参数</p>
+                        <h2>Settings</h2>
+                        <p>Configure application and node parameters</p>
                     </div>
                     
                     <div class="settings-content">
                         <div class="setting-group">
-                            <h3>节点配置</h3>
+                            <h3>Node Configuration</h3>
                             <div class="setting-item">
-                                <label>节点别名</label>
-                                <input type="text" placeholder="输入节点别名" />
+                                <label>Node Alias</label>
+                                <input type="text" placeholder="Enter Node Alias" />
                             </div>
                             <div class="setting-item">
-                                <label>网络</label>
+                                <label>Network</label>
                                 <select>
-                                    <option value="mainnet">主网</option>
-                                    <option value="testnet">测试网</option>
-                                    <option value="regtest">回归测试</option>
+                                    <option value="mainnet">Mainnet</option>
+                                    <option value="testnet">Testnet</option>
+                                    <option value="regtest">Regtest</option>
                                 </select>
                             </div>
                         </div>
                         
                         <div class="setting-group">
-                            <h3>应用设置</h3>
+                            <h3>Application Settings</h3>
                             <div class="setting-item">
-                                <label>主题</label>
+                                <label>Theme</label>
                                 <select>
-                                    <option value="light">浅色</option>
-                                    <option value="dark">深色</option>
-                                    <option value="auto">自动</option>
+                                    <option value="light">Light</option>
+                                    <option value="dark">Dark</option>
+                                    <option value="auto">Auto</option>
                                 </select>
                             </div>
                             <div class="setting-item">
-                                <label>语言</label>
+                                <label>Language</label>
                                 <select>
-                                    <option value="zh-CN">中文</option>
+                                    <option value="zh-CN">Chinese</option>
                                     <option value="en">English</option>
                                 </select>
                             </div>
@@ -207,11 +207,11 @@
             </section>
         </main>
 
-        <!-- 底部状态栏 -->
+        <!-- Bottom Status Bar -->
         <footer class="footer">
             <div class="footer-content">
-                <span class="app-version">版本: <span id="appVersion">1.0.0</span></span>
-                <span class="sync-status">同步状态: <span id="syncStatus">未连接</span></span>
+                <span class="app-version">Version: <span id="appVersion">1.0.0</span></span>
+                <span class="sync-status">Sync Status: <span id="syncStatus">Disconnected</span></span>
             </div>
         </footer>
     </div>

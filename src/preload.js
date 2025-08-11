@@ -1,63 +1,63 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-// 暴露受保护的方法
+// Expose protected methods
 contextBridge.exposeInMainWorld('electronAPI', {
-    // 获取应用版本
+    // Get application version
     getAppVersion: () => ipcRenderer.invoke('get-app-version'),
     
-    // nodeserver 相关 API
+    // nodeserver related API
     getServerStatus: () => ipcRenderer.invoke('get-server-status'),
     restartServer: () => ipcRenderer.invoke('restart-server'),
     installServerDependencies: () => ipcRenderer.invoke('install-server-dependencies'),
     
-    // 通用服务器请求
+    // General server requests
     makeServerRequest: (endpoint, options) => ipcRenderer.invoke('make-server-request', endpoint, options),
     
-    // LND API 专用请求
+    // LND API specific requests
     makeLndRequest: (endpoint, options) => ipcRenderer.invoke('make-lnd-request', endpoint, options),
     
-    // 监听来自主进程的消息
+    // Listen for messages from the main process
     onServerStatus: (callback) => ipcRenderer.on('server-status', callback),
     onShowServerStatus: (callback) => ipcRenderer.on('show-server-status', callback),
     
-    // 移除监听器
+    // Remove listeners
     removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel)
 });
 
-// 暴露 Nostr API 到 window.nostr
+// Expose Nostr API to window.nostr
 contextBridge.exposeInMainWorld('nostr', {
   
-  // 获取公钥
+  // Get public key
   getPublicKey: () => ipcRenderer.invoke('nostr-get-public-key'),
 
   getNpub: () => ipcRenderer.invoke('nostr-get-npub'),
   
-  // 签名事件
+  // Sign event
   signEvent: (event) => ipcRenderer.invoke('nostr-sign-event', event),
   
-  // 获取中继列表
+  // Get relay list
   getRelays: () => ipcRenderer.invoke('nostr-get-relays'),
   
-  // NIP-04: 加密消息
+  // NIP-04: Encrypt message
   nip04: {
       encrypt: (pubkey, plaintext) => ipcRenderer.invoke('nostr-nip04-encrypt', pubkey, plaintext),
       decrypt: (pubkey, ciphertext) => ipcRenderer.invoke('nostr-nip04-decrypt', pubkey, ciphertext)
   },
   
-  // NIP-44: 加密消息 (新版本)
+  // NIP-44: Encrypt message (new version)
   nip44: {
       encrypt: (pubkey, plaintext) => ipcRenderer.invoke('nostr-nip44-encrypt', pubkey, plaintext),
       decrypt: (pubkey, ciphertext) => ipcRenderer.invoke('nostr-nip44-decrypt', pubkey, ciphertext)
   },
   
-  // 启用/禁用 Nostr 功能
+  // Enable/Disable Nostr features
   enable: () => ipcRenderer.invoke('nostr-enable'),
   
-  // 检查是否已启用
+  // Check if enabled
   isEnabled: () => ipcRenderer.invoke('nostr-is-enabled')
 });
 
-// 在窗口加载完成时执行
+// Execute when window is loaded
 window.addEventListener('DOMContentLoaded', () => {
     console.log('Preload script loaded with nodeserver integration');
 }); 

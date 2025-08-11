@@ -1,7 +1,7 @@
 const Store = require('electron-store');
 const { generatePrivateKey } = require("nostr-tools")
 // const { bytesToHex } = require('@noble/hashes/utils') 
-// 创建存储实例
+// Create store instance
 const store = new Store({
     name: 'app-config',
     defaults: {

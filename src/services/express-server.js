@@ -173,13 +173,7 @@ class ExpressServer {
         // env.LND_LISTEN_PORT = '9735';
         // env.LND_REST_PORT = '8080';
 
-        // Set LINK_OWNER to the Nostr npub
-
-        //rgb
-        // env.RGB_LISTENING_PORT = '3001';
-        // env.RGB_LDK_PEER_LISTENING_PORT = '9735';
-
-        // 设置 NODE_PATH 来包含 nodeserver 的 node_modules
+        // Set NODE_PATH to include nodeserver's node_modules
         const nodeModulesPath = pathManager.getNodeServerNodeModulesPath();
         if (env.NODE_PATH) {
           env.NODE_PATH = `${nodeModulesPath}${path.delimiter}${env.NODE_PATH}`;

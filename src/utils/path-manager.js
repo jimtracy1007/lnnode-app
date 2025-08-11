@@ -41,7 +41,7 @@ class PathManager {
     const platform = process.platform;
     const arch = process.arch;
     
-    // 修复 Windows 平台路径格式：win32 -> win
+    // Fix Windows platform path format: win32 -> win
     let platformName = platform;
     if (platform === 'win32') {
       platformName = 'win';
