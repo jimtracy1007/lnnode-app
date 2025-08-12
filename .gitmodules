@@ -1,4 +1,4 @@
 [submodule "nodeserver"]
 	path = nodeserver
-	url = git@github.com:lnfi-network/nostr-wrapper.git
+	url = git@github.com:jimtracy1007/lnlink-server.git
 	branch = main
