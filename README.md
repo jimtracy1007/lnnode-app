@@ -70,6 +70,23 @@ npm start
 
 This project uses `electron-builder`.
 
+### macOS Installation Note
+
+Due to the app not being code-signed with an Apple Developer certificate, macOS may show a "damaged" warning on first launch. To install:
+
+**Method 1 (Recommended):**
+1. Right-click on LN-Link.app → Select "Open"
+2. Click "Open" in the warning dialog
+
+**Method 2 (Command Line):**
+```bash
+# Remove quarantine attribute
+xattr -d com.apple.quarantine /Applications/LN-Link.app
+
+# Then launch normally
+open /Applications/LN-Link.app
+```
+
 Build for all targets configured:
 
 ```bash

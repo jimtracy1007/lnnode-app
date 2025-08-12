@@ -77,6 +77,9 @@
     "mac": {
       "category": "public.app-category.finance",
       "icon": "assets/lnfi.png",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "identity": null,
       "target": [
         {
           "target": "dmg",
