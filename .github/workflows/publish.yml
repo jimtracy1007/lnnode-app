@@ -37,6 +37,8 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Build (mac-amd)
+        env:
+          ELECTRON_BUILDER_PUBLISH: never
         run: npm run build:mac-amd
 
       - name: Upload artifacts (mac-amd)
@@ -77,6 +79,8 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Build (mac-arm)
+        env:
+          ELECTRON_BUILDER_PUBLISH: never
         run: npm run build:mac-arm
 
       - name: Upload artifacts (mac-arm)
