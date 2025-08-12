@@ -114,13 +114,20 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dist-mac-amd
-          path: ./
+          path: dist/
 
       - name: Download artifacts (mac-arm)
         uses: actions/download-artifact@v4
         with:
           name: dist-mac-arm
-          path: ./
+          path: dist/
+
+      - name: List downloaded files
+        run: |
+          echo "Files in dist directory:"
+          ls -la dist/
+          echo "DMG files found:"
+          find dist -name "*.dmg" -type f || echo "No DMG files found"
 
       - name: Generate build hash
         id: build-hash

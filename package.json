@@ -1,6 +1,6 @@
 {
   "name": "LNNode",
-  "version": "0.1.0",
+  "version": "0.1.1-alpha.1",
   "description": "Lightning Network Node Application built with Electron",
   "main": "src/main.js",
   "scripts": {
