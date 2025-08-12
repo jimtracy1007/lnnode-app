@@ -1,4 +1,4 @@
 [submodule "nodeserver"]
 	path = nodeserver
-	url = https://github.com/lnfi-network/nostr-wrapper.git
+	url = git@github.com:lnfi-network/nostr-wrapper.git
 	branch = main
