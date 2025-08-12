@@ -46,8 +46,8 @@ jobs:
         with:
           name: dist-mac-amd
           path: |
-            dist/
-            !dist/**/*.map
+            dist/*.dmg
+            dist/*.blockmap
 
   build-mac-arm:
     runs-on: macos-latest
@@ -88,8 +88,8 @@ jobs:
         with:
           name: dist-mac-arm
           path: |
-            dist/
-            !dist/**/*.map
+            dist/*.dmg
+            dist/*.blockmap
 
   release:
     runs-on: ubuntu-latest
@@ -114,18 +114,19 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dist-mac-amd
-          path: dist/mac-amd
+          path: ./
 
       - name: Download artifacts (mac-arm)
         uses: actions/download-artifact@v4
         with:
           name: dist-mac-arm
-          path: dist/mac-arm
+          path: ./
 
       - name: Generate build hash
         id: build-hash
         run: |
-          BUILD_HASH=$(find dist -type f -exec sha256sum {} \; | sha256sum | cut -d' ' -f1)
+          # Only hash the final DMG files to avoid processing too many files
+          BUILD_HASH=$(find dist -name "*.dmg" -type f -exec sha256sum {} \; | sha256sum | cut -d' ' -f1)
           echo "build_hash=$BUILD_HASH" >> $GITHUB_OUTPUT
           echo "Build hash: $BUILD_HASH"
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
@@ -138,8 +139,9 @@ jobs:
         with:
           name: build-artifacts-${{ steps.build-hash.outputs.build_hash }}
           path: |
-            dist/
-            !dist/**/*.map
+            dist/*.dmg
+            dist/*.blockmap
+            dist/build-info.json
 
       - name: Read package version
         id: pkg-version
@@ -155,4 +157,6 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            dist/**/*
+            dist/*.dmg
+            dist/*.blockmap
+            dist/build-info.json
