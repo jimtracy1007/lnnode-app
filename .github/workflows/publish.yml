@@ -39,7 +39,7 @@ jobs:
       - name: Build (mac-amd)
         env:
           ELECTRON_BUILDER_PUBLISH: never
-        run: npm run build:mac-amd -- --publish=never
+        run: npm run build:mac-amd
 
       - name: Upload artifacts (mac-amd)
         uses: actions/upload-artifact@v4
@@ -81,7 +81,7 @@ jobs:
       - name: Build (mac-arm)
         env:
           ELECTRON_BUILDER_PUBLISH: never
-        run: npm run build:mac-arm -- --publish=never
+        run: npm run build:mac-arm
 
       - name: Upload artifacts (mac-arm)
         uses: actions/upload-artifact@v4

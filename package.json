@@ -48,6 +48,7 @@
   "build": {
     "appId": "node.lnfi.network",
     "productName": "LN-Link",
+    "publish": "never",
     "directories": {
       "output": "dist"
     },
