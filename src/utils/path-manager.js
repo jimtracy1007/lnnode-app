@@ -26,17 +26,45 @@ class PathManager {
     const platform = process.platform;
     const arch = process.arch;
 
-    // Fix Windows platform path format: win32 -> win
-    let platformName = platform;
+    let platformName;
+    
+    // Map platform names to match binary directory structure
     if (platform === 'win32') {
-      platformName = 'win';
+      platformName = 'win32';
     } else if (platform === 'darwin') {
       platformName = 'darwin';
     } else if (platform === 'linux') {
       platformName = 'linux';
+    } else {
+      log.warn(`Unsupported platform: ${platform}`);
+      platformName = platform;
     }
 
-    const binaryDir = `${platformName}-${arch}`;
+    // Map architecture names
+    let archName = arch;
+    if (arch === 'x64') {
+      archName = 'x64';
+    } else if (arch === 'arm64') {
+      archName = 'arm64';
+    } else {
+      log.warn(`Unsupported architecture: ${arch}`);
+      archName = arch;
+    }
+
+    const binaryDir = `${platformName}-${archName}`;
+    
+    // Validate supported platform-architecture combinations
+    const supportedCombinations = [
+      'darwin-x64',
+      'darwin-arm64', 
+      'linux-x64',
+      'win32-x64'
+    ];
+    
+    if (!supportedCombinations.includes(binaryDir)) {
+      log.warn(`Unsupported platform-architecture combination: ${binaryDir}. Supported: ${supportedCombinations.join(', ')}`);
+    }
+    
     const fullPath = path.join(this.binaryPath, binaryDir);
 
     log.info(`Binary path: platform=${platform}, arch=${arch}, mapped=${binaryDir}, full=${fullPath}`);

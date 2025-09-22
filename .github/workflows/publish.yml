@@ -14,9 +14,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: recursive
           fetch-depth: 0
-          ssh-key: ${{ secrets.SUBMODULE_SSH_KEY }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -56,9 +54,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: recursive
           fetch-depth: 0
-          ssh-key: ${{ secrets.SUBMODULE_SSH_KEY }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -91,11 +87,87 @@ jobs:
             dist/*.dmg
             dist/*.blockmap
 
+  build-linux:
+    runs-on: ubuntu-22.04
+    environment: prod-deploy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js (Linux)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: "yarn"
+
+      - name: Install system dependencies (Linux)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-0 libgconf-2-4 libasound2 libxtst6 libxss1 libgdk-pixbuf2.0-0 libatk1.0-0 libdrm2 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libxkbcommon0 libatspi2.0-0
+
+      - name: Install deps
+        run: yarn install --frozen-lockfile
+
+      - name: Build (Linux)
+        env:
+          ELECTRON_BUILDER_PUBLISH: never
+        run: npm run build:linux
+
+      - name: Upload artifacts (Linux)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-linux
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+            dist/*.snap
+            dist/*.tar.gz
+            dist/*.blockmap
+
+  build-windows:
+    runs-on: windows-latest
+    environment: prod-deploy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js (Windows)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: "yarn"
+
+      - name: Install deps
+        run: yarn install --frozen-lockfile
+
+      - name: Build (Windows x64)
+        env:
+          ELECTRON_BUILDER_PUBLISH: never
+        run: npm run build:win
+
+      - name: Upload artifacts (Windows)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-windows-x64
+          path: |
+            dist/*.exe
+            dist/*.msi
+            dist/*.blockmap
+
   release:
     runs-on: ubuntu-latest
     needs:
       - build-mac-amd
       - build-mac-arm
+      - build-linux
+      - build-windows
     environment: prod-deploy
     steps:
       - name: Checkout
@@ -114,13 +186,25 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dist-mac-amd
-          path: dist/
+          path: dist/mac-amd/
 
       - name: Download artifacts (mac-arm)
         uses: actions/download-artifact@v4
         with:
           name: dist-mac-arm
-          path: dist/
+          path: dist/mac-arm/
+
+      - name: Download artifacts (Linux)
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-linux
+          path: dist/linux/
+
+      - name: Download artifacts (Windows)
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-windows-x64
+          path: dist/windows-x64/
 
       - name: List downloaded files
         run: |
@@ -128,12 +212,16 @@ jobs:
           ls -la dist/
           echo "DMG files found:"
           find dist -name "*.dmg" -type f || echo "No DMG files found"
+          echo "AppImage files found:"
+          find dist -name "*.AppImage" -type f || echo "No AppImage files found"
+          echo "EXE files found:"
+          find dist -name "*.exe" -type f || echo "No EXE files found"
 
       - name: Generate build hash
         id: build-hash
         run: |
-          # Only hash the final DMG files to avoid processing too many files
-          BUILD_HASH=$(find dist -name "*.dmg" -type f -exec sha256sum {} \; | sha256sum | cut -d' ' -f1)
+          # Hash all the final package files
+          BUILD_HASH=$(find dist -type f \( -name "*.dmg" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.deb" -o -name "*.rpm" -o -name "*.snap" -o -name "*.tar.gz" \) -exec sha256sum {} \; | sha256sum | cut -d' ' -f1)
           echo "build_hash=$BUILD_HASH" >> $GITHUB_OUTPUT
           echo "Build hash: $BUILD_HASH"
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
@@ -146,8 +234,14 @@ jobs:
         with:
           name: build-artifacts-${{ steps.build-hash.outputs.build_hash }}
           path: |
-            dist/*.dmg
-            dist/*.blockmap
+            dist/**/*.dmg
+            dist/**/*.AppImage
+            dist/**/*.exe
+            dist/**/*.deb
+            dist/**/*.rpm
+            dist/**/*.snap
+            dist/**/*.tar.gz
+            dist/**/*.blockmap
             dist/build-info.json
 
       - name: Read package version
@@ -164,6 +258,12 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            dist/*.dmg
-            dist/*.blockmap
+            dist/**/*.dmg
+            dist/**/*.AppImage
+            dist/**/*.exe
+            dist/**/*.deb
+            dist/**/*.rpm
+            dist/**/*.snap
+            dist/**/*.tar.gz
+            dist/**/*.blockmap
             dist/build-info.json
