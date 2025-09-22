@@ -87,46 +87,46 @@ jobs:
             dist/*.dmg
             dist/*.blockmap
 
-  build-linux:
-    runs-on: ubuntu-22.04
-    environment: prod-deploy
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+  # build-linux:
+  #   runs-on: ubuntu-22.04
+  #   environment: prod-deploy
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
 
-      - name: Setup Node.js (Linux)
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          registry-url: https://registry.npmjs.org
-          cache: "yarn"
+  #     - name: Setup Node.js (Linux)
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22
+  #         registry-url: https://registry.npmjs.org
+  #         cache: "yarn"
 
-      - name: Install system dependencies (Linux)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-0 libgconf-2-4 libasound2 libxtst6 libxss1 libgdk-pixbuf2.0-0 libatk1.0-0 libdrm2 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libxkbcommon0 libatspi2.0-0
+  #     - name: Install system dependencies (Linux)
+  #       run: |
+  #         sudo apt-get update
+  #         sudo apt-get install -y libgtk-3-0 libgconf-2-4 libasound2 libxtst6 libxss1 libgdk-pixbuf2.0-0 libatk1.0-0 libdrm2 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libxkbcommon0 libatspi2.0-0
 
-      - name: Install deps
-        run: yarn install --frozen-lockfile
+  #     - name: Install deps
+  #       run: yarn install --frozen-lockfile
 
-      - name: Build (Linux)
-        env:
-          ELECTRON_BUILDER_PUBLISH: never
-        run: npm run build:linux
+  #     - name: Build (Linux)
+  #       env:
+  #         ELECTRON_BUILDER_PUBLISH: never
+  #       run: npm run build:linux
 
-      - name: Upload artifacts (Linux)
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-linux
-          path: |
-            dist/*.AppImage
-            dist/*.deb
-            dist/*.rpm
-            dist/*.snap
-            dist/*.tar.gz
-            dist/*.blockmap
+  #     - name: Upload artifacts (Linux)
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: dist-linux
+  #         path: |
+  #           dist/*.AppImage
+  #           dist/*.deb
+  #           dist/*.rpm
+  #           dist/*.snap
+  #           dist/*.tar.gz
+  #           dist/*.blockmap
 
   build-windows:
     runs-on: windows-latest
@@ -166,7 +166,6 @@ jobs:
     needs:
       - build-mac-amd
       - build-mac-arm
-      - build-linux
       - build-windows
     environment: prod-deploy
     steps:

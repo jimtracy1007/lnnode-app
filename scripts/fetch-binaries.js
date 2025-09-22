@@ -98,15 +98,15 @@ function downloadFile(url, outFile) {
   throw lastError || new Error('Download failed');
 }
 
-function extractTarGz(archiveFile, destDir) {
-  const tarPath = which('tar');
-  if (!tarPath) {
-    throw new Error('tar not found in PATH');
+function extractZip(archiveFile, destDir) {
+  const unzipPath = which('unzip');
+  if (!unzipPath) {
+    throw new Error('unzip not found in PATH');
   }
   ensureDir(destDir);
-  const res = spawnSync(tarPath, ['-xzf', archiveFile, '-C', destDir], { stdio: 'inherit' });
+  const res = spawnSync(unzipPath, ['-q', archiveFile, '-d', destDir], { stdio: 'inherit' });
   if (res.status !== 0) {
-    throw new Error(`tar extraction failed with status ${res.status}`);
+    throw new Error(`unzip extraction failed with status ${res.status}`);
   }
 }
 
@@ -211,7 +211,36 @@ function fetchForKey(json, key, root) {
           }
           let matched = '';
           if (name === 'tor') {
-            matched = findFirstMatch(extractDir, 'tor') || findFirstMatch(extractDir, 'tor.real');
+            matched = findFirstMatch(extractDir, 'tor') || findFirstMatch(extractDir, 'tor.real') || findFirstMatch(extractDir, 'tor.exe');
+          } else if (name === 'litd') {
+            matched = findFirstMatch(extractDir, 'litd') || findFirstMatch(extractDir, 'litd.exe');
+          } else {
+            matched = findFirstMatch(extractDir, name);
+          }
+          if (!matched) {
+            throw new Error(`File '${name}' not found in extracted archive from ${url}`);
+          }
+          fs.copyFileSync(matched, targetPath);
+          if (EXECUTABLE_NAMES.has(name)) {
+            setExecutableIfExists(targetPath);
+          }
+          logInfo(`Placed: ${targetPath}`);
+        }
+      } else if (url.endsWith('.zip')) {
+        const extractDir = path.join(tmpDir, 'extract');
+        extractZip(archiveFile, extractDir);
+
+        for (const name of names) {
+          const targetPath = path.join(destDir, name);
+          if (fs.existsSync(targetPath)) {
+            logInfo(`Exists, skip: ${targetPath}`);
+            continue;
+          }
+          let matched = '';
+          if (name === 'tor') {
+            matched = findFirstMatch(extractDir, 'tor') || findFirstMatch(extractDir, 'tor.real') || findFirstMatch(extractDir, 'tor.exe');
+          } else if (name === 'litd') {
+            matched = findFirstMatch(extractDir, 'litd') || findFirstMatch(extractDir, 'litd.exe');
           } else {
             matched = findFirstMatch(extractDir, name);
           }
