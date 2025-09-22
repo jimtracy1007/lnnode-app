@@ -31,10 +31,10 @@
     "electron-builder": "^24.9.1"
   },
   "dependencies": {
-    "@lnfi-network/ln-link": "*",
     "electron-log": "^5.4.0",
     "electron-store": "^8.1.0",
     "electron-updater": "^6.1.7",
+    "ln-link": "1.0.0-alpha",
     "nostr-tools": "1.17.0"
   },
   "build": {

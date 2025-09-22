@@ -9,7 +9,8 @@ const nostrService = require('./nostr-service');
 const { exec } = require('node:child_process');
 
 // Import LN-Link Electron wrapper
-const LnLinkElectron = require('@lnfi-network/ln-link/electron');
+// const LnLinkElectron = require('@lnfi-network/ln-link/electron');
+const LnLinkElectron = require('ln-link/electron');
 class ExpressServer {
   constructor() {
     this.lnLink = null;
