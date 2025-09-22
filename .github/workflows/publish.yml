@@ -185,6 +185,7 @@ jobs:
           key: ${{ runner.os }}-node-gyp-${{ hashFiles('yarn.lock') }}
 
       - name: Configure build environment (Windows)
+        shell: pwsh
         run: |
           # Configure npm for better network handling
           npm config set fetch-retry-mintimeout 20000
@@ -192,14 +193,12 @@ jobs:
           npm config set fetch-retries 3
           npm config set registry https://registry.npmjs.org/
 
-          # Configure node-gyp for Windows SDK (using correct npm config names)
-          npm config set msvs-version 2022
-          npm config set python python
-
-          # Set environment variables for native compilation
-          echo "PYTHON=python" >> $env:GITHUB_ENV
+          # Export environment variables for node-gyp / native builds
+          $py = (Get-Command python).Source
+          echo "PYTHON=$py" >> $env:GITHUB_ENV
+          echo "npm_config_python=$py" >> $env:GITHUB_ENV
           echo "npm_config_msvs_version=2022" >> $env:GITHUB_ENV
-          echo "npm_config_python=python" >> $env:GITHUB_ENV
+          echo "GYP_MSVS_VERSION=2022" >> $env:GITHUB_ENV
           echo "npm_config_cache=$env:USERPROFILE\.npm" >> $env:GITHUB_ENV
 
       - name: Setup Build Tools (Windows)
