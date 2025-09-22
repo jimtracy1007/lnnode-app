@@ -7,91 +7,91 @@ permissions:
   contents: write
 
 jobs:
-  build-mac-amd:
-    runs-on: macos-latest
-    environment: prod-deploy
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+  # build-mac-amd:
+  #   runs-on: macos-latest
+  #   environment: prod-deploy
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
 
-      - name: Remove package-lock.json
-        run: rm -f package-lock.json
+  #     - name: Remove package-lock.json
+  #       run: rm -f package-lock.json
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          registry-url: https://registry.npmjs.org
-          cache: "yarn"
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22
+  #         registry-url: https://registry.npmjs.org
+  #         cache: "yarn"
 
-      - name: Cache Electron (macOS)
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/Library/Caches/electron
-            ~/Library/Caches/electron-builder
-          key: ${{ runner.os }}-electron-${{ hashFiles('yarn.lock') }}
+  #     - name: Cache Electron (macOS)
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: |
+  #           ~/Library/Caches/electron
+  #           ~/Library/Caches/electron-builder
+  #         key: ${{ runner.os }}-electron-${{ hashFiles('yarn.lock') }}
 
-      - name: Install deps
-        run: yarn install --frozen-lockfile
+  #     - name: Install deps
+  #       run: yarn install --frozen-lockfile
 
-      - name: Build (mac-amd)
-        env:
-          ELECTRON_BUILDER_PUBLISH: never
-        run: npm run build:mac-amd
+  #     - name: Build (mac-amd)
+  #       env:
+  #         ELECTRON_BUILDER_PUBLISH: never
+  #       run: npm run build:mac-amd
 
-      - name: Upload artifacts (mac-amd)
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-mac-amd
-          path: |
-            dist/*.dmg
-            dist/*.blockmap
+  #     - name: Upload artifacts (mac-amd)
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: dist-mac-amd
+  #         path: |
+  #           dist/*.dmg
+  #           dist/*.blockmap
 
-  build-mac-arm:
-    runs-on: macos-latest
-    environment: prod-deploy
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+  # build-mac-arm:
+  #   runs-on: macos-latest
+  #   environment: prod-deploy
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
 
-      - name: Remove package-lock.json
-        run: rm -f package-lock.json
+  #     - name: Remove package-lock.json
+  #       run: rm -f package-lock.json
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          registry-url: https://registry.npmjs.org
-          cache: "yarn"
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22
+  #         registry-url: https://registry.npmjs.org
+  #         cache: "yarn"
 
-      - name: Cache Electron (macOS)
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/Library/Caches/electron
-            ~/Library/Caches/electron-builder
-          key: ${{ runner.os }}-electron-${{ hashFiles('yarn.lock') }}
+  #     - name: Cache Electron (macOS)
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: |
+  #           ~/Library/Caches/electron
+  #           ~/Library/Caches/electron-builder
+  #         key: ${{ runner.os }}-electron-${{ hashFiles('yarn.lock') }}
 
-      - name: Install deps
-        run: yarn install --frozen-lockfile
+  #     - name: Install deps
+  #       run: yarn install --frozen-lockfile
 
-      - name: Build (mac-arm)
-        env:
-          ELECTRON_BUILDER_PUBLISH: never
-        run: npm run build:mac-arm
+  #     - name: Build (mac-arm)
+  #       env:
+  #         ELECTRON_BUILDER_PUBLISH: never
+  #       run: npm run build:mac-arm
 
-      - name: Upload artifacts (mac-arm)
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-mac-arm
-          path: |
-            dist/*.dmg
-            dist/*.blockmap
+  #     - name: Upload artifacts (mac-arm)
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: dist-mac-arm
+  #         path: |
+  #           dist/*.dmg
+  #           dist/*.blockmap
 
   # build-linux:
   #   runs-on: ubuntu-22.04
@@ -183,11 +183,11 @@ jobs:
           npm config set fetch-retry-maxtimeout 120000
           npm config set fetch-retries 3
           npm config set registry https://registry.npmjs.org/
-          
+
           # Configure node-gyp for Windows SDK
           npm config set msvs_version 2022
           npm config set python python3
-          
+
           # Set environment variables for native compilation
           echo "PYTHON=python3" >> $env:GITHUB_ENV
           echo "npm_config_cache=$env:USERPROFILE\.npm" >> $env:GITHUB_ENV
@@ -206,7 +206,7 @@ jobs:
           $env:npm_config_python = "python"
           $env:npm_config_msvs_version = "2022"
           $env:npm_config_node_gyp = (Get-Command node).Source.Replace("node.exe", "node_modules\node-gyp\bin\node-gyp.js")
-          
+
           for ($i = 1; $i -le 3; $i++) {
             Write-Host "Attempt $i of 3"
             try {
