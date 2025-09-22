@@ -98,6 +98,18 @@ function downloadFile(url, outFile) {
   throw lastError || new Error('Download failed');
 }
 
+function extractTarGz(archiveFile, destDir) {
+  const tarPath = which('tar');
+  if (!tarPath) {
+    throw new Error('tar not found in PATH');
+  }
+  ensureDir(destDir);
+  const res = spawnSync(tarPath, ['-xzf', archiveFile, '-C', destDir], { stdio: 'inherit' });
+  if (res.status !== 0) {
+    throw new Error(`tar extraction failed with status ${res.status}`);
+  }
+}
+
 function extractZip(archiveFile, destDir) {
   const unzipPath = which('unzip');
   if (!unzipPath) {
