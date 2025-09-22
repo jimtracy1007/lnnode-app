@@ -1,5 +1,5 @@
 {
-  "name": "LNNode",
+  "name": "LNLink",
   "version": "0.1.1-alpha.1",
   "description": "Lightning Network Node Application built with Electron",
   "main": "src/main.js",
@@ -7,22 +7,18 @@
     "preinstall": "node ./scripts/fetch-binaries.js --all",
     "start": "electron .",
     "dev": "electron . --dev",
-    "dev:server": "cd nodeserver && node app.js",
-    "dev:full": "concurrently \"npm run dev:server\" \"npm run dev\"",
     "build": "electron-builder",
     "build:mac": "electron-builder --mac --x64 --arm64 --publish=never",
-    "build:mac-amd": "cd nodeserver && npm run rebuild:sqlite3:x64 && cd .. && npm run rebuild:x64 && electron-builder --mac --x64 --publish=never",
-    "build:mac-arm": "cd nodeserver && npm run rebuild:sqlite3:arm64 && cd .. && npm run rebuild:arm64 && electron-builder --mac --arm64 --publish=never",
-    "build:win": "cd nodeserver && npm run rebuild:sqlite3:win:x64 && cd .. && npm run rebuild:win:x64 && electron-builder --win --publish=never",
+    "build:mac-amd": "npm run rebuild:x64 && electron-builder --mac --x64 --publish=never",
+    "build:mac-arm": "npm run rebuild:arm64 && electron-builder --mac --arm64 --publish=never",
+    "build:win": "npm run rebuild:win:x64 && electron-builder --win --publish=never",
     "build:linux": "electron-builder --linux --publish=never",
     "pack": "electron-builder --dir",
     "dist": "electron-builder --publish=never",
-    "server:install": "cd nodeserver && yarn install",
-    "server:start": "cd nodeserver && node app.js",
-    "postinstall": "electron-builder install-app-deps && cd nodeserver && npm install",
-    "rebuild:x64": "electron-rebuild --arch=x64 --module-dir=nodeserver",
-    "rebuild:arm64": "electron-rebuild --arch=arm64 --module-dir=nodeserver",
-    "rebuild:win:x64": "electron-rebuild --arch=x64 --platform=win32 --module-dir=nodeserver"
+    "postinstall": "electron-builder install-app-deps",
+    "rebuild:x64": "electron-rebuild --arch=x64",
+    "rebuild:arm64": "electron-rebuild --arch=arm64",
+    "rebuild:win:x64": "electron-rebuild --arch=x64 --platform=win32"
   },
   "keywords": [
     "electron",
@@ -35,11 +31,11 @@
   "license": "MIT",
   "devDependencies": {
     "@electron/rebuild": "^4.0.1",
-    "concurrently": "^8.2.2",
     "electron": "^28.0.0",
     "electron-builder": "^24.9.1"
   },
   "dependencies": {
+    "@lnfi-network/ln-link": "*",
     "electron-log": "^5.4.0",
     "electron-store": "^8.1.0",
     "electron-updater": "^6.1.7",
@@ -54,21 +50,7 @@
     },
     "files": [
       "src/**/*",
-      "assets/**/*",
-      "nodeserver/**/*",
-      "!nodeserver/node_modules/.bin",
-      "!nodeserver/node_modules/**/*.{md,txt,yml,yaml}",
-      "!nodeserver/node_modules/**/test",
-      "!nodeserver/node_modules/**/tests"
-    ],
-    "extraResources": [
-      {
-        "from": "nodeserver/node_modules",
-        "to": "nodeserver/node_modules"
-      }
-    ],
-    "asarUnpack": [
-      "**/nodeserver/**/*"
+      "assets/**/*"
     ],
     "npmRebuild": false,
     "nodeGypRebuild": false,

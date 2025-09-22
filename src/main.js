@@ -17,16 +17,16 @@ function registerServerHandlers() {
   ipcMain.handle('restart-server', async () => {
     try {
       log.info('Restarting Express server via IPC...');
-      
+
       // Stop current server
       expressServer.stop();
-      
+
       // Wait a bit for cleanup
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       // Start server again
       await expressServer.start();
-      
+
       log.info('Express server restarted successfully');
       return { success: true, message: 'Server restarted successfully' };
     } catch (error) {
@@ -59,7 +59,7 @@ function registerServerHandlers() {
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
   log.error('Uncaught Exception:', err);
-  
+
   // Send error to main window if it exists
   const mainWindow = windowManager.getMainWindow();
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -70,7 +70,7 @@ process.on('uncaughtException', (err) => {
 // Check for and track any remaining processes (more specific)
 function checkForRemainingProcesses() {
   const { exec } = require('child_process');
-  
+
   // Check for litd processes (only if not already tracked)
   if (!processManager.getLitdProcess()) {
     exec('pgrep -f "litd --disableui"', (err, stdout) => {
@@ -90,14 +90,14 @@ function checkForRemainingProcesses() {
                 return false;
               }
             },
-            on: () => {}
+            on: () => { }
           };
           processManager.setLitdProcess(mockProcess);
         }
       }
     });
   }
-  
+
   // Check for rgb-lightning-node processes (only if not already tracked)
   if (!processManager.getRgbNodeProcess()) {
     exec('pgrep -f "rgb-lightning-node.*--daemon-listening-port"', (err, stdout) => {
@@ -117,7 +117,7 @@ function checkForRemainingProcesses() {
                 return false;
               }
             },
-            on: () => {}
+            on: () => { }
           };
           processManager.setRgbNodeProcess(mockProcess);
         }
@@ -127,30 +127,30 @@ function checkForRemainingProcesses() {
 }
 
 // Centralized cleanup function
-function performCleanup() {
+async function performCleanup() {
   if (isShuttingDown) {
     log.info('Cleanup already in progress, skipping duplicate cleanup');
     return;
   }
-  
+
   isShuttingDown = true;
   log.info('Performing application cleanup...');
-  
+
   // Stop process checking interval
   if (processCheckInterval) {
     clearInterval(processCheckInterval);
     processCheckInterval = null;
   }
-  
+
   // Check for any remaining processes before cleanup
   checkForRemainingProcesses();
-  
+
   // Stop Express server
-  expressServer.stop();
-  
+  await expressServer.stop();
+
   // Terminate all child processes
   processManager.killAllProcesses();
-  
+
   // Final verification after cleanup
   setTimeout(() => {
     const { execSync } = require('child_process');
@@ -170,38 +170,38 @@ function performCleanup() {
 async function initApp() {
   try {
     log.info('Starting Lightning Network Node application');
-    
+
     // Create the main application window
     await windowManager.createMainWindow();
-    
+
     // Register IPC handlers
     registerNostrHandlers();
-    
+
     // Register additional IPC handlers
     registerServerHandlers();
-    
+
     // Start periodic process checking (less frequent)
     processCheckInterval = setInterval(checkForRemainingProcesses, 10000); // Every 10 seconds
-    
+
     // Start Express server
     try {
       log.info('Starting Express server...');
       await expressServer.start();
       log.info('Express server started successfully');
-      
+
       // Load the application URL
       await windowManager.loadAppUrl();
     } catch (error) {
       log.error('Failed to start Express server:', error);
       await windowManager.showErrorScreen(error);
     }
-    
+
     // Open DevTools in development mode
     if (!app.isPackaged) {
       windowManager.openDevTools();
       log.info('DevTools opened in development mode');
     }
-    
+
   } catch (error) {
     log.error('Failed to initialize application:', error);
     app.quit();
@@ -215,10 +215,10 @@ app.whenReady().then(initApp).catch(err => {
 });
 
 // Quit the application when all windows are closed
-app.on('window-all-closed', () => {
+app.on('window-all-closed', async () => {
   log.info('All windows closed');
-  performCleanup();
-  
+  await performCleanup();
+
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -232,18 +232,18 @@ app.on('activate', () => {
 });
 
 // Add before-quit event handler
-app.on('before-quit', (event) => {
+app.on('before-quit', async (event) => {
   if (isShuttingDown) {
     log.info('Already shutting down, allowing quit to proceed');
     return;
   }
-  
+
   log.info('Application is about to quit');
   event.preventDefault();
-  
+
   // Perform cleanup
-  performCleanup();
-  
+  await performCleanup();
+
   // Allow time for cleanup then exit
   setTimeout(() => {
     log.info('Cleanup completed, now exiting application');
@@ -252,9 +252,9 @@ app.on('before-quit', (event) => {
 });
 
 // Ensure server process is closed when the app exits
-app.on('quit', () => {
+app.on('quit', async () => {
   log.info('Application is quitting');
   if (!isShuttingDown) {
-    performCleanup();
+    await performCleanup();
   }
 });

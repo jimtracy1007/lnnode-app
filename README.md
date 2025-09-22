@@ -31,7 +31,7 @@ nodeserver enforces Node >= 19 via engines, so use at least Node 19 for developm
 
 ```bash
 git clone <repository-url>
-cd lnnode-app
+cd LNLink-app
 ```
 
 ### 2) Install dependencies
@@ -130,7 +130,7 @@ The `afterPack.js` script validates SQLite3 bindings inside the packaged `nodese
 ## Project Structure
 
 ```
-lnnode-app/
+LNLink-app/
 ├─ src/
 │  ├─ main.js               # Electron main process (window + lifecycle + server IPC)
 │  ├─ preload.js            # Safe IPC bridge for renderer (window.electronAPI, window.nostr)
