@@ -235,12 +235,6 @@ jobs:
           name: dist-mac-arm
           path: dist/mac-arm/
 
-      - name: Download artifacts (Linux)
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-linux
-          path: dist/linux/
-
       - name: Download artifacts (Windows)
         uses: actions/download-artifact@v4
         with:
@@ -253,8 +247,6 @@ jobs:
           ls -la dist/
           echo "DMG files found:"
           find dist -name "*.dmg" -type f || echo "No DMG files found"
-          echo "AppImage files found:"
-          find dist -name "*.AppImage" -type f || echo "No AppImage files found"
           echo "EXE files found:"
           find dist -name "*.exe" -type f || echo "No EXE files found"
 
@@ -262,7 +254,7 @@ jobs:
         id: build-hash
         run: |
           # Hash all the final package files
-          BUILD_HASH=$(find dist -type f \( -name "*.dmg" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.deb" -o -name "*.rpm" -o -name "*.snap" -o -name "*.tar.gz" \) -exec sha256sum {} \; | sha256sum | cut -d' ' -f1)
+          BUILD_HASH=$(find dist -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.msi" \) -exec sha256sum {} \; | sha256sum | cut -d' ' -f1)
           echo "build_hash=$BUILD_HASH" >> $GITHUB_OUTPUT
           echo "Build hash: $BUILD_HASH"
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
@@ -276,12 +268,8 @@ jobs:
           name: build-artifacts-${{ steps.build-hash.outputs.build_hash }}
           path: |
             dist/**/*.dmg
-            dist/**/*.AppImage
             dist/**/*.exe
-            dist/**/*.deb
-            dist/**/*.rpm
-            dist/**/*.snap
-            dist/**/*.tar.gz
+            dist/**/*.msi
             dist/**/*.blockmap
             dist/build-info.json
 
@@ -300,11 +288,7 @@ jobs:
           prerelease: false
           files: |
             dist/**/*.dmg
-            dist/**/*.AppImage
             dist/**/*.exe
-            dist/**/*.deb
-            dist/**/*.rpm
-            dist/**/*.snap
-            dist/**/*.tar.gz
+            dist/**/*.msi
             dist/**/*.blockmap
             dist/build-info.json

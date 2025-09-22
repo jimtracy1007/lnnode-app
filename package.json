@@ -4,7 +4,7 @@
   "description": "Lightning Network Node Application built with Electron",
   "main": "src/main.js",
   "scripts": {
-    "preinstall": "node ./scripts/fetch-binaries.js --all",
+    "preinstall": "node ./scripts/fetch-binaries.js",
     "start": "electron .",
     "dev": "electron . --dev",
     "build": "electron-builder",
@@ -12,7 +12,6 @@
     "build:mac-amd": "electron-builder --mac --x64 --publish=never",
     "build:mac-arm": "electron-builder --mac --arm64 --publish=never",
     "build:win": "electron-builder --win --publish=never",
-    "build:linux": "electron-builder --linux --publish=never",
     "pack": "electron-builder --dir",
     "dist": "electron-builder --publish=never",
     "postinstall": "electron-builder install-app-deps"

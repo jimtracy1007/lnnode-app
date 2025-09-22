@@ -294,7 +294,10 @@ function parseTargets(json) {
   const argMacAll = argv.includes('--mac-all') || argv.includes('--mac-both');
 
   const envTargets = process.env.BINARIES_TARGETS || '';
-
+  
+  // Check for CI-specific environment variables
+  const ciJobName = process.env.GITHUB_JOB || '';
+  
   if (argAll) {
     return Object.keys(json);
   }
@@ -306,6 +309,17 @@ function parseTargets(json) {
   }
   if (envTargets) {
     return envTargets.split(',').map((s) => s.trim()).filter(Boolean);
+  }
+  
+  // CI job-specific targeting
+  if (ciJobName === 'build-mac-amd') {
+    return ['darwin-x64'];
+  }
+  if (ciJobName === 'build-mac-arm') {
+    return ['darwin-arm64'];
+  }
+  if (ciJobName === 'build-windows') {
+    return ['win32-x64'];
   }
 
   const { key } = mapPlatformArch();
