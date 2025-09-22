@@ -36,7 +36,7 @@ function mapPlatformArch() {
 
   const platformMap = {
     darwin: 'darwin',
-    win32: 'win',
+    win32: 'win32',
     linux: 'linux',
   };
 
