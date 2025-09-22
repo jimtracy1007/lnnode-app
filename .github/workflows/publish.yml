@@ -156,9 +156,17 @@ jobs:
       - name: Setup Node.js (Windows)
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           registry-url: https://registry.npmjs.org
           cache: "yarn"
+
+      - name: Setup Python (Windows)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup MSVC Dev Cmd (Windows)
+        uses: ilammy/msvc-dev-cmd@v1
 
       - name: Cache Electron (Windows)
         uses: actions/cache@v4
@@ -194,13 +202,14 @@ jobs:
           echo "npm_config_python=python" >> $env:GITHUB_ENV
           echo "npm_config_cache=$env:USERPROFILE\.npm" >> $env:GITHUB_ENV
 
-      - name: Setup Python and Build Tools (Windows)
+      - name: Setup Build Tools (Windows)
         run: |
-          # Install Visual Studio Build Tools 2022 with C++ workload
-          choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.Windows11SDK.22000 --includeRecommended --passive" -y
-        continue-on-error: true
+          # Ensure Python and MSVC are available (installed above). No heavy installs to keep CI fast.
+          python --version
+          cl /?
+        shell: pwsh
 
-      - name: Install deps with comprehensive retry and fallback
+      - name: Install deps with comprehensive retry and fallback (ignore scripts)
         run: |
           # Set additional environment variables for native compilation
           $env:PYTHON = "python"
@@ -213,15 +222,15 @@ jobs:
               if ($i -eq 1) {
                 # First attempt: Try normal install
                 Write-Host "Trying normal install..."
-                yarn install --frozen-lockfile --network-timeout 300000
+                yarn install --frozen-lockfile --ignore-scripts --network-timeout 300000
               } elseif ($i -eq 2) {
                 # Second attempt: Skip optional dependencies
                 Write-Host "Trying without optional dependencies..."
-                yarn install --frozen-lockfile --network-timeout 300000 --ignore-optional
+                yarn install --frozen-lockfile --ignore-scripts --network-timeout 300000 --ignore-optional
               } else {
                 # Final attempt: Skip everything possible
                 Write-Host "Trying with all ignores..."
-                yarn install --frozen-lockfile --network-timeout 300000 --ignore-optional --ignore-engines --ignore-platform
+                yarn install --frozen-lockfile --ignore-scripts --network-timeout 300000 --ignore-optional --ignore-engines --ignore-platform
               }
               Write-Host "Install successful!"
               break
@@ -235,6 +244,10 @@ jobs:
               }
             }
           }
+      - name: Rebuild native deps for Electron
+        run: |
+          # Rebuild native modules against Electron headers
+          yarn run postinstall
 
       - name: Build (Windows x64)
         env:
