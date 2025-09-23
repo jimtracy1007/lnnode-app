@@ -13,6 +13,10 @@ let processCheckInterval = null;
 
 // Register additional IPC handlers
 function registerServerHandlers() {
+  // Remove existing handlers first (for development mode)
+  ipcMain.removeHandler('restart-server');
+  ipcMain.removeHandler('get-server-status');
+  
   // Restart server handler
   ipcMain.handle('restart-server', async () => {
     try {

@@ -1,12 +1,14 @@
 {
-  "name": "LNLink",
-  "version": "0.1.1-alpha.1",
+  "name": "ln-link-app",
+  "version": "1.0.0-alpha.1",
   "description": "Lightning Network Node Application built with Electron",
   "main": "src/main.js",
   "scripts": {
     "preinstall": "node ./scripts/fetch-binaries.js",
-    "start": "electron .",
-    "dev": "electron . --dev",
+    "prisma:generate": "node ./scripts/prisma-setup.js --step=generate",
+    "prisma:migrate": "node ./scripts/prisma-setup.js --step=migrate",
+    "prisma:setup": "node ./scripts/prisma-setup.js",
+    "dev": "node ./scripts/prisma-setup.js && electron . --dev",
     "build": "electron-builder",
     "build:mac": "electron-builder --mac --x64 --arm64 --publish=never",
     "build:mac-amd": "electron-builder --mac --x64 --publish=never",
@@ -14,7 +16,8 @@
     "build:win": "electron-builder --win --publish=never",
     "pack": "electron-builder --dir",
     "dist": "electron-builder --publish=never",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps",
+    "prebuild": "node ./scripts/prisma-setup.js"
   },
   "keywords": [
     "electron",
@@ -33,7 +36,7 @@
     "electron-log": "^5.4.0",
     "electron-store": "^8.1.0",
     "electron-updater": "^6.1.7",
-    "ln-link": "1.0.0-alpha",
+    "ln-link": "1.0.6-alpha",
     "nostr-tools": "1.17.0"
   },
   "build": {
@@ -45,12 +48,26 @@
     },
     "files": [
       "src/**/*",
-      "assets/**/*"
+      "assets/**/*",
+      {
+        "from": "node_modules/.prisma",
+        "to": "node_modules/.prisma",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "data",
+        "to": "data",
+        "filter": [
+          "**/*"
+        ]
+      }
     ],
     "npmRebuild": false,
     "nodeGypRebuild": false,
     "buildDependenciesFromSource": false,
-    "asar": true,
+    "asar": false,
     "mac": {
       "category": "public.app-category.finance",
       "icon": "assets/lnfi.png",

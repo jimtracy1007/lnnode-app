@@ -1,7 +1,8 @@
 const { app } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const log = require('./logger');
+const os = require('os');
+const log = require('electron-log');
 
 class PathManager {
   constructor() {
@@ -9,35 +10,40 @@ class PathManager {
     this.appPath = app.getAppPath();
 
     if (this.isPackaged) {
-      this.userDataPath = app.getPath('userData');
       this.resourcesPath = process.resourcesPath;
-      this.binaryPath = path.join(process.resourcesPath, 'bin');
+      this.userDataPath = app.getPath('userData'); // 可写的用户目录
+      this.binaryRootPath = path.join(process.resourcesPath, 'bin');
+      this.appDataPath = path.join(process.resourcesPath, 'app', 'data'); // 只读的应用数据
     } else {
       this.userDataPath = path.join(__dirname, '..', '..', 'data');
       this.resourcesPath = path.join(__dirname, '..', '..', 'data');
-      this.binaryPath = path.join(__dirname, '..', '..', 'bin');
+      this.binaryRootPath = path.join(__dirname, '..', '..', 'bin');
     }
 
     this.debugPaths();
   }
 
 
-  getBinaryPath() {
-    const platform = process.platform;
-    const arch = process.arch;
+  getDataPath() {
+    return this.userDataPath;
+  }
 
-    let platformName;
+  getBinaryRootPath() {
+    return this.binaryRootPath;
+  }
+
+  getBinaryDir() {
+    const platform = os.platform();
+    const arch = os.arch();
     
-    // Map platform names to match binary directory structure
+    // Map platform names
+    let platformName = platform;
     if (platform === 'win32') {
       platformName = 'win32';
     } else if (platform === 'darwin') {
       platformName = 'darwin';
     } else if (platform === 'linux') {
       platformName = 'linux';
-    } else {
-      log.warn(`Unsupported platform: ${platform}`);
-      platformName = platform;
     }
 
     // Map architecture names
@@ -46,34 +52,18 @@ class PathManager {
       archName = 'x64';
     } else if (arch === 'arm64') {
       archName = 'arm64';
-    } else {
-      log.warn(`Unsupported architecture: ${arch}`);
-      archName = arch;
     }
 
-    const binaryDir = `${platformName}-${archName}`;
-    
-    // Validate supported platform-architecture combinations
-    const supportedCombinations = [
-      'darwin-x64',
-      'darwin-arm64', 
-      'linux-x64',
-      'win32-x64'
-    ];
-    
-    if (!supportedCombinations.includes(binaryDir)) {
-      log.warn(`Unsupported platform-architecture combination: ${binaryDir}. Supported: ${supportedCombinations.join(', ')}`);
-    }
-    
-    const fullPath = path.join(this.binaryPath, binaryDir);
-
-    log.info(`Binary path: platform=${platform}, arch=${arch}, mapped=${binaryDir}, full=${fullPath}`);
-
-    return fullPath;
+    return `${platformName}-${archName}`;
   }
 
-  getDataPath() {
-    return this.userDataPath;
+  getBinaryPath() {
+    // Full path to platform-specific bin directory: <root>/bin/<platform-arch>
+    return path.join(this.binaryRootPath, this.getBinaryDir());
+  }
+
+  getAppDataPath() {
+    return this.appDataPath || this.userDataPath;
   }
 
   getAppIcon() {
@@ -91,6 +81,7 @@ class PathManager {
     log.info('=== PathManager Debug ===');
     log.info('isPackaged:', this.isPackaged);
     log.info('getDataPath():', this.getDataPath());
+    log.info('getBinaryRootPath():', this.getBinaryRootPath());
     log.info('getBinaryPath():', this.getBinaryPath());
   }
 }

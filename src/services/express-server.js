@@ -1,16 +1,16 @@
-const { fork, spawn } = require('child_process');
+// const { fork, spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const net = require('net');
 const log = require('../utils/logger');
 const pathManager = require('../utils/path-manager');
-const processManager = require('./process-manager');
+// const processManager = require('./process-manager');
 const nostrService = require('./nostr-service');
 const { exec } = require('node:child_process');
 
 // Import LN-Link Electron wrapper
-// const LnLinkElectron = require('@lnfi-network/ln-link/electron');
-const LnLinkElectron = require('ln-link/electron');
+//const LnLinkElectron = require('@lnfi-network/ln-link');
+const LnLinkElectron = require('ln-link');
 class ExpressServer {
   constructor() {
     this.lnLink = null;
@@ -160,9 +160,38 @@ class ExpressServer {
 
       log.info(`Using port ${this.port} for LN-Link server`);
 
+      // Plan A: ensure user database exists by copying from template at first run
+      const dataPath = pathManager.getDataPath();
+      const userDbDir = path.join(dataPath, 'link');
+      const userDbPath = path.join(userDbDir, 'lnlink.db');
+      const templateDbPath = path.join(pathManager.getAppDataPath(), 'link', 'lnlink.db');
+
+      if (!fs.existsSync(userDbPath)) {
+        try {
+          if (!fs.existsSync(userDbDir)) {
+            fs.mkdirSync(userDbDir, { recursive: true });
+            log.info(`Created user DB directory: ${userDbDir}`);
+          }
+          if (fs.existsSync(templateDbPath)) {
+            fs.copyFileSync(templateDbPath, userDbPath);
+            log.info(`Copied template DB from ${templateDbPath} -> ${userDbPath}`);
+          } else {
+            log.warn(`Template DB not found at ${templateDbPath}. Prisma should have created it during prebuild.`);
+          }
+        } catch (e) {
+          log.error(`Failed to prepare user DB: ${e.message}`);
+        }
+      } else {
+        log.info(`Using existing user DB at: ${userDbPath}`);
+      }
+
+      // Ensure LINK_DATABASE_URL is set for ln-link initialization
+      process.env.LINK_DATABASE_URL = `file:${userDbPath}`;
+      log.info(`Set LINK_DATABASE_URL: ${process.env.LINK_DATABASE_URL}`);
+
       // Create LN-Link instance with configuration
       const config = {
-        dataPath: pathManager.getDataPath(),
+        dataPath: dataPath,
         network: process.env.LINK_NETWORK || 'regtest', // default to testnet
         httpPort: parseInt(this.port),
         name: 'LN-Link-App', // Application name

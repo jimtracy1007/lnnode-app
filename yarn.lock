@@ -1860,10 +1860,10 @@ lazy-val@^1.0.4, lazy-val@^1.0.5:
   resolved "https://registry.yarnpkg.com/lazy-val/-/lazy-val-1.0.5.tgz#6cf3b9f5bc31cee7ee3e369c0832b7583dcd923d"
   integrity sha512-0/BnGCCfyUMkBpeDgWihanIAF9JmZhHBgUhEqzvf+adhNGLoP6TaiI5oF8oyb3I45P+PcnrqihSf01M0l0G5+Q==
 
-ln-link@1.0.0-alpha:
-  version "1.0.0-alpha"
-  resolved "https://registry.yarnpkg.com/ln-link/-/ln-link-1.0.0-alpha.tgz#3b4bf7ceb843755ca5f8bf9b0704db14e7be2143"
-  integrity sha512-X9ao6h4rDRxapJp1NrlCLRS7iUipfU9v2ive/OJ5zBjNn+ZGdyDvWPO+hLTHu03ecT7Z/FdAlpEgObex1gjZAA==
+ln-link@1.0.6-alpha:
+  version "1.0.6-alpha"
+  resolved "https://registry.yarnpkg.com/ln-link/-/ln-link-1.0.6-alpha.tgz#2e3bd6be78cb2bd8313090d02441ebc557cb5694"
+  integrity sha512-2NxqeNi/WluJU46BRv92on3Ah4MWgQn7CuVtEQsonIZOXWtOMSyJbCKb912OMNWi2au4maKEb6LcNWKuOe1eFA==
   dependencies:
     "@grpc/grpc-js" "^1.10.8"
     "@grpc/proto-loader" "^0.7.9"

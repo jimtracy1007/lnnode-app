@@ -140,6 +140,32 @@ function findFirstMatch(rootDir, filename) {
   return '';
 }
 
+function findFirstDir(rootDir, pattern) {
+  // Find first directory matching pattern
+  const entries = fs.readdirSync(rootDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (entry.isDirectory() && pattern.test(entry.name)) {
+      return path.join(rootDir, entry.name);
+    }
+  }
+  return '';
+}
+
+function copyRecursive(src, dest) {
+  // Recursively copy directory
+  ensureDir(dest);
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyRecursive(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
 function setExecutableIfExists(filePath) {
   try {
     const mode = fs.statSync(filePath).mode;
@@ -202,6 +228,11 @@ function fetchForKey(json, key, root) {
   logInfo(`Temp dir: ${tmpDir}`);
   try {
     for (const [url, names] of Object.entries(urlToNames)) {
+      // Plan A: If this URL only provides Node.js runtime, skip entirely
+      if (names.every((n) => n === 'node')) {
+        logInfo(`Skip download (Node.js runtime only): ${url}`);
+        continue;
+      }
       const allExist = names.every((n) => fs.existsSync(path.join(destDir, n)));
       if (allExist) {
         logInfo(`All targets already present for URL: ${url}`);
@@ -216,6 +247,12 @@ function fetchForKey(json, key, root) {
         extractTarGz(archiveFile, extractDir);
 
         for (const name of names) {
+          if (name === 'node') {
+            // Plan A: 不再捆绑 Node.js 运行时，直接跳过
+            logInfo('Skip Node.js runtime (Plan A)');
+            continue;
+          }
+          
           const targetPath = path.join(destDir, name);
           if (fs.existsSync(targetPath)) {
             logInfo(`Exists, skip: ${targetPath}`);
@@ -243,6 +280,12 @@ function fetchForKey(json, key, root) {
         extractZip(archiveFile, extractDir);
 
         for (const name of names) {
+          if (name === 'node') {
+            // Plan A: 不再捆绑 Node.js 运行时，直接跳过
+            logInfo('Skip Node.js runtime (Plan A)');
+            continue;
+          }
+          
           const targetPath = path.join(destDir, name);
           if (fs.existsSync(targetPath)) {
             logInfo(`Exists, skip: ${targetPath}`);

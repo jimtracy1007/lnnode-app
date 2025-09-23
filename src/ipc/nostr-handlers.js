@@ -4,6 +4,12 @@ const nostrService = require('../services/nostr-service');
 
 // Register all Nostr IPC handlers
 function registerNostrHandlers() {
+  // Remove existing handlers first (for development mode)
+  ipcMain.removeHandler('nostr-get-public-key');
+  ipcMain.removeHandler('nostr-sign-event');
+  ipcMain.removeHandler('nostr-encrypt');
+  ipcMain.removeHandler('nostr-decrypt');
+  
   // Get public key
   ipcMain.handle('nostr-get-public-key', async () => {
     try {
