@@ -1,6 +1,6 @@
 {
   "name": "ln-link-app",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "description": "Lightning Network Node Application built with Electron",
   "main": "src/main.js",
   "scripts": {
