@@ -43,7 +43,7 @@ jobs:
       - name: Build (mac-amd)
         env:
           ELECTRON_BUILDER_PUBLISH: never
-        run: npm run build:mac-amd
+        run: npx electron-builder --mac --x64 --publish=never --config.mac.target='{"target":"dmg","arch":["x64"]}'
 
       - name: Upload artifacts (mac-amd)
         uses: actions/upload-artifact@v4
@@ -89,7 +89,7 @@ jobs:
       - name: Build (mac-arm)
         env:
           ELECTRON_BUILDER_PUBLISH: never
-        run: npm run build:mac-arm
+        run: npx electron-builder --mac --arm64 --publish=never --config.mac.target='{"target":"dmg","arch":["arm64"]}'
 
       - name: Upload artifacts (mac-arm)
         uses: actions/upload-artifact@v4
