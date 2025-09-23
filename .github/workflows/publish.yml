@@ -309,8 +309,8 @@ jobs:
           ls -la dist/
           echo "DMG files found:"
           find dist -name "*.dmg" -type f || echo "No DMG files found"
-          echo "EXE files found:"
-          find dist -name "*.exe" -type f || echo "No EXE files found"
+          echo "BLOCKMAP files found:"
+          find dist -name "*.blockmap" -type f || echo "No BLOCKMAP files found"
 
       - name: Generate build hash
         id: build-hash
@@ -347,10 +347,12 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            dist/**/*.dmg
-            dist/**/*.blockmap
+            dist/mac-amd/*.dmg
+            dist/mac-amd/*.blockmap
+            dist/mac-arm/*.dmg
+            dist/mac-arm/*.blockmap
             dist/build-info.json
           fail_on_unmatched_files: false
-          overwrite: true
+          overwrite_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
