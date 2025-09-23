@@ -2,7 +2,7 @@ const { app } = require('electron');
 global.crypto = require('crypto'); // Add global crypto object
 const { ipcMain } = require('electron');
 const log = require('./utils/logger');
-const pathManager = require('./utils/path-manager');
+
 const processManager = require('./services/process-manager');
 const expressServer = require('./services/express-server');
 const windowManager = require('./ui/window-manager');
@@ -71,62 +71,47 @@ process.on('uncaughtException', (err) => {
   }
 });
 
-// Check for and track any remaining processes (more specific)
-function checkForRemainingProcesses() {
-  const { exec } = require('child_process');
+// Check for and track any remaining processes (cross-platform)
+async function checkForRemainingProcesses() {
+  try {
+    const { default: psList } = await import('ps-list');
+    const list = await psList();
 
-  // Check for litd processes (only if not already tracked)
-  if (!processManager.getLitdProcess()) {
-    exec('pgrep -f "litd --disableui"', (err, stdout) => {
-      if (!err && stdout.trim()) {
-        const pids = stdout.trim().split('\n');
-        const mainPid = parseInt(pids[0]); // Only track the first one
-        if (mainPid) {
-          log.info(`Found untracked litd process with PID: ${mainPid}, tracking it`);
-          const mockProcess = {
-            pid: mainPid,
-            kill: (signal) => {
-              try {
-                process.kill(mainPid, signal);
-                return true;
-              } catch (e) {
-                log.error(`Error killing litd process: ${e.message}`);
-                return false;
-              }
-            },
-            on: () => { }
-          };
-          processManager.setLitdProcess(mockProcess);
-        }
+    // litd
+    if (!processManager.getLitdProcess()) {
+      const lit = list.find(p => /\blitd\b/.test(`${p.name} ${p.cmd || ''}`));
+      if (lit && lit.pid) {
+        const mainPid = lit.pid;
+        log.info(`Found untracked litd process with PID: ${mainPid}, tracking it`);
+        const mockProcess = {
+          pid: mainPid,
+          kill: (signal) => {
+            try { process.kill(mainPid, signal); return true; } catch (e) { log.error(`Error killing litd process: ${e.message}`); return false; }
+          },
+          on: () => {}
+        };
+        processManager.setLitdProcess(mockProcess);
       }
-    });
-  }
+    }
 
-  // Check for rgb-lightning-node processes (only if not already tracked)
-  if (!processManager.getRgbNodeProcess()) {
-    exec('pgrep -f "rgb-lightning-node.*--daemon-listening-port"', (err, stdout) => {
-      if (!err && stdout.trim()) {
-        const pids = stdout.trim().split('\n');
-        const mainPid = parseInt(pids[0]); // Only track the first one
-        if (mainPid) {
-          log.info(`Found untracked rgb-lightning-node process with PID: ${mainPid}, tracking it`);
-          const mockProcess = {
-            pid: mainPid,
-            kill: (signal) => {
-              try {
-                process.kill(mainPid, signal);
-                return true;
-              } catch (e) {
-                log.error(`Error killing rgb-lightning-node process: ${e.message}`);
-                return false;
-              }
-            },
-            on: () => { }
-          };
-          processManager.setRgbNodeProcess(mockProcess);
-        }
+    // rgb-lightning-node
+    if (!processManager.getRgbNodeProcess()) {
+      const rgb = list.find(p => /rgb-lightning-node/.test(`${p.name} ${p.cmd || ''}`));
+      if (rgb && rgb.pid) {
+        const mainPid = rgb.pid;
+        log.info(`Found untracked rgb-lightning-node process with PID: ${mainPid}, tracking it`);
+        const mockProcess = {
+          pid: mainPid,
+          kill: (signal) => {
+            try { process.kill(mainPid, signal); return true; } catch (e) { log.error(`Error killing rgb-lightning-node process: ${e.message}`); return false; }
+          },
+          on: () => {}
+        };
+        processManager.setRgbNodeProcess(mockProcess);
       }
-    });
+    }
+  } catch (e) {
+    log.error(`Failed to list processes: ${e.message}`);
   }
 }
 
@@ -155,15 +140,16 @@ async function performCleanup() {
   // Terminate all child processes
   processManager.killAllProcesses();
 
-  // Final verification after cleanup
-  setTimeout(() => {
-    const { execSync } = require('child_process');
+  // Final verification after cleanup (cross-platform best effort)
+  setTimeout(async () => {
     try {
-      if (process.platform === 'darwin' || process.platform === 'linux') {
-        execSync('pkill -9 -f "rgb-lightning-node" || true');
-        execSync('pkill -9 -f "litd" || true');
-        log.info('Final cleanup verification completed');
+      const { default: psList } = await import('ps-list');
+      const list = await psList();
+      const leftovers = list.filter(p => /rgb-lightning-node|\blitd\b/.test(`${p.name} ${p.cmd || ''}`));
+      for (const p of leftovers) {
+        try { process.kill(p.pid, 'SIGKILL'); } catch (_) {}
       }
+      log.info('Final cleanup verification completed');
     } catch (err) {
       log.error('Error in final cleanup verification:', err);
     }

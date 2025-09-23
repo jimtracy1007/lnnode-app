@@ -1,15 +1,13 @@
 // const { fork, spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-const net = require('net');
 const log = require('../utils/logger');
 const pathManager = require('../utils/path-manager');
-// const processManager = require('./process-manager');
-const nostrService = require('./nostr-service');
-const { exec } = require('node:child_process');
 
-// Import LN-Link Electron wrapper
-//const LnLinkElectron = require('@lnfi-network/ln-link');
+const nostrService = require('./nostr-service');
+const detectPort = require('detect-port');
+
+
 const LnLinkElectron = require('ln-link');
 class ExpressServer {
   constructor() {
@@ -24,26 +22,10 @@ class ExpressServer {
     return this.port;
   }
 
-  // Check if a port is available
+  // Check if a port is available (cross-platform)
   async isPortAvailable(port) {
-    return new Promise((resolve) => {
-      exec(`lsof -i :${port}`, (_error, stdout) => {
-        if (stdout && stdout.trim()) {
-          return resolve(false)
-        }
-        const server = net.createServer()
-
-        server.on("error", (_err) => {
-          resolve(false)
-        })
-
-        server.listen(port, "0.0.0.0", () => {
-          server.close(() => {
-            resolve(true)
-          })
-        })
-      })
-    })
+    const free = await detectPort(port);
+    return free === port;
   }
 
   // Find next available port based on port range rules
@@ -81,8 +63,8 @@ class ExpressServer {
     throw new Error(`No available port found starting from ${basePort}`);
   }
 
-  // Check for and track processes by name (more specific search)
-  checkAndTrackProcess(processName, trackFunction) {
+  // Check for and track processes by name (cross-platform)
+  async checkAndTrackProcess(processName, trackFunction) {
     // Double check if already tracked (safety measure)
     if (processName === 'litd' && this.litdTracked) {
       log.debug(`${processName} already tracked, skipping check`);
@@ -93,61 +75,47 @@ class ExpressServer {
       return;
     }
 
-    const { exec } = require('child_process');
-    let searchPattern;
-
-    // Use more specific patterns to avoid matching too many processes
-    if (processName === 'litd') {
-      searchPattern = 'pgrep -f "^.*litd --disableui"';
-    } else if (processName === 'rgb-lightning-node') {
-      searchPattern = 'pgrep -f "rgb-lightning-node.*--daemon-listening-port"';
-    } else {
-      searchPattern = `pgrep -f "${processName}"`;
-    }
-
     log.debug(`Searching for ${processName} process...`);
-    exec(searchPattern, (err, stdout) => {
-      if (!err && stdout.trim()) {
-        const pids = stdout.trim().split('\n');
-        // Only track the first (main) process
-        const mainPid = parseInt(pids[0]);
-        if (mainPid) {
-          log.info(`Found ${processName} process with PID: ${mainPid}`);
-
-          // Create a mock process object to track the external process
-          const mockProcess = {
-            pid: mainPid,
-            kill: (signal) => {
-              try {
-                process.kill(mainPid, signal);
-                return true;
-              } catch (e) {
-                log.error(`Error killing ${processName} process: ${e.message}`);
-                return false;
-              }
-            },
-            on: (event, callback) => {
-              // This is a simplified mock, as we can't actually attach to the real process events
-              if (event === 'close') {
-                // We'll handle this in the process manager's cleanup
-              }
-            }
-          };
-
-          // Register with process manager
-          trackFunction(mockProcess);
-          log.info(`${processName} process successfully tracked and registered`);
+    try {
+      const { default: psList } = await import('ps-list');
+      const list = await psList();
+      const match = list.find((p) => {
+        const cmd = `${p.name} ${p.cmd || ''}`;
+        if (processName === 'litd') {
+          return /\blitd\b/.test(cmd) && /--disableui/.test(cmd);
         }
+        if (processName === 'rgb-lightning-node') {
+          return /rgb-lightning-node/.test(cmd) && /--daemon-listening-port/.test(cmd);
+        }
+        return cmd.includes(processName);
+      });
+
+      if (match && match.pid) {
+        const mainPid = match.pid;
+        log.info(`Found ${processName} process with PID: ${mainPid}`);
+        const mockProcess = {
+          pid: mainPid,
+          kill: (signal) => {
+            try {
+              process.kill(mainPid, signal);
+              return true;
+            } catch (e) {
+              log.error(`Error killing ${processName} process: ${e.message}`);
+              return false;
+            }
+          },
+          on: () => {}
+        };
+        trackFunction(mockProcess);
+        log.info(`${processName} process successfully tracked and registered`);
       } else {
         log.warn(`No ${processName} process found - it may not have started yet`);
-        // Reset the tracking flag if process not found so we can retry later
-        if (processName === 'litd') {
-          this.litdTracked = false;
-        } else if (processName === 'rgb-lightning-node') {
-          this.rgbTracked = false;
-        }
+        if (processName === 'litd') this.litdTracked = false;
+        if (processName === 'rgb-lightning-node') this.rgbTracked = false;
       }
-    });
+    } catch (e) {
+      log.error(`Failed to list processes: ${e.message}`);
+    }
   }
 
   // Start Express server
