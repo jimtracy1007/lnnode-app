@@ -297,6 +297,19 @@ jobs:
           name: dist-mac-arm
           path: dist/mac-arm/
 
+      - name: Consolidate artifacts to dist root
+        run: |
+          # Move all artifacts to dist root to avoid duplicate matching
+          mkdir -p dist
+          if [ -d "dist/mac-amd" ]; then
+            mv dist/mac-amd/* dist/ 2>/dev/null || true
+          fi
+          if [ -d "dist/mac-arm" ]; then
+            mv dist/mac-arm/* dist/ 2>/dev/null || true
+          fi
+          echo "Final dist contents:"
+          ls -la dist/
+
       # - name: Download artifacts (Windows)
       #   uses: actions/download-artifact@v4
       #   with:
@@ -347,10 +360,8 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            dist/mac-amd/*.dmg
-            dist/mac-amd/*.blockmap
-            dist/mac-arm/*.dmg
-            dist/mac-arm/*.blockmap
+            dist/*.dmg
+            dist/*.blockmap
             dist/build-info.json
           fail_on_unmatched_files: false
           overwrite_files: true
