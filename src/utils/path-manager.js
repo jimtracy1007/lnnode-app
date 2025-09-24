@@ -11,7 +11,7 @@ class PathManager {
 
     if (this.isPackaged) {
       this.resourcesPath = process.resourcesPath;
-      this.userDataPath = app.getPath('userData'); // 可写的用户目录
+      this.userDataPath = app.getPath('userData');
       this.binaryRootPath = path.join(process.resourcesPath, 'bin');
       this.appDataPath = path.join(process.resourcesPath, 'app', 'data'); // 只读的应用数据
     } else {
