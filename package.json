@@ -1,6 +1,6 @@
 {
   "name": "ln-link-app",
-  "version": "1.0.0-alpha.3",
+  "version": "1.0.0-alpha.4",
   "description": "Lightning Network Node Application built with Electron",
   "main": "src/main.js",
   "scripts": {
@@ -29,6 +29,7 @@
   "author": "Lnfi-Network",
   "license": "MIT",
   "devDependencies": {
+    "asar": "^3.2.0",
     "electron": "^28.0.0",
     "electron-builder": "^24.9.1"
   },
@@ -69,7 +70,12 @@
     "npmRebuild": false,
     "nodeGypRebuild": false,
     "buildDependenciesFromSource": false,
-    "asar": false,
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/.prisma/client/**",
+      "node_modules/ln-link/prisma/**",
+      "bin/**"
+    ],
     "mac": {
       "category": "public.app-category.finance",
       "icon": "assets/lnfi.png",

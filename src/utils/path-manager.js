@@ -12,8 +12,28 @@ class PathManager {
     if (this.isPackaged) {
       this.resourcesPath = process.resourcesPath;
       this.userDataPath = app.getPath('userData');
-      this.binaryRootPath = path.join(process.resourcesPath, 'bin');
-      this.appDataPath = path.join(process.resourcesPath, 'app', 'data'); // 只读的应用数据
+
+      const appDir = path.join(this.resourcesPath, 'app');
+      const appAsarUnpacked = path.join(this.resourcesPath, 'app.asar.unpacked');
+
+      // Determine binary root path (extraFiles are placed directly under Resources/bin)
+      const packagedBinPath = path.join(this.resourcesPath, 'bin');
+      const unpackedBinPath = path.join(appAsarUnpacked, 'bin');
+      if (fs.existsSync(packagedBinPath)) {
+        this.binaryRootPath = packagedBinPath;
+      } else if (fs.existsSync(unpackedBinPath)) {
+        this.binaryRootPath = unpackedBinPath;
+      } else {
+        this.binaryRootPath = packagedBinPath; // fallback
+      }
+
+      if (fs.existsSync(path.join(appDir, 'data'))) {
+        this.appDataPath = path.join(appDir, 'data');
+      } else if (fs.existsSync(path.join(appAsarUnpacked, 'data'))) {
+        this.appDataPath = path.join(appAsarUnpacked, 'data');
+      } else {
+        this.appDataPath = path.join(this.appPath, 'data');
+      }
     } else {
       this.userDataPath = path.join(__dirname, '..', '..', 'data');
       this.resourcesPath = path.join(__dirname, '..', '..', 'data');
