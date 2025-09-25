@@ -37,6 +37,23 @@ function main() {
     process.exit(1);
   }
 
+  // Ensure generator block contains required binaryTargets for mac builds
+  const schemaContent = fs.readFileSync(schemaPath, 'utf8');
+  const binaryTargetsLine = '  binaryTargets = ["native", "darwin", "darwin-arm64"]';
+  if (!schemaContent.includes('binaryTargets')) {
+    const providerLine = '  provider = "prisma-client-js"';
+    if (!schemaContent.includes(providerLine)) {
+      console.error('Unable to inject binaryTargets: provider line not found in schema.prisma generator block.');
+      process.exit(1);
+    }
+    const updatedSchema = schemaContent.replace(
+      providerLine,
+      `${providerLine}\n${binaryTargetsLine}`
+    );
+    fs.writeFileSync(schemaPath, updatedSchema);
+    console.log('🛠️ Updated schema.prisma to include binaryTargets for mac binaries.');
+  }
+
   const dataDir = path.join(process.cwd(), 'data', 'link');
   ensureDir(dataDir);
   const dbPath = path.join(dataDir, 'lnlink.db');
@@ -46,11 +63,8 @@ function main() {
   };
 
   console.log(`🗄️ Using template DB path: ${dbPath}`);
-  const binaryTargets = ['native', 'darwin-arm64', 'darwin'];
-  for (const target of binaryTargets) {
-    console.log(`🔧 Running prisma generate for target: ${target}`);
-    runPrisma(['generate', '--schema', schemaPath, '--binary-target', target], env);
-  }
+  console.log('🔧 Running prisma generate with schema-defined binaryTargets...');
+  runPrisma(['generate', '--schema', schemaPath], env);
 
   console.log('📦 Running prisma migrate deploy...');
   runPrisma(['migrate', 'deploy', '--schema', schemaPath], env);
