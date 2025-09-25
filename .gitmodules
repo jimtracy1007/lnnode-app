@@ -1,4 +1,0 @@
-[submodule "nodeserver"]
-	path = nodeserver
-	url = git@github.com:jimtracy1007/lnlink-server.git
-	branch = main
