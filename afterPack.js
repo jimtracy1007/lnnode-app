@@ -50,6 +50,7 @@ exports.default = async function(context) {
     if (electronPlatformName === 'darwin') {
       queryEngineFiles = [
         `libquery_engine-darwin-${actualArch}.dylib.node`,
+        'libquery_engine-darwin.dylib.node',
         'libquery_engine.dylib.node'
       ];
     } else if (electronPlatformName === 'win32') {
