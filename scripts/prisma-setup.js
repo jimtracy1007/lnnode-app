@@ -46,8 +46,11 @@ function main() {
   };
 
   console.log(`🗄️ Using template DB path: ${dbPath}`);
-  console.log('🔧 Running prisma generate...');
-  runPrisma(['generate', '--schema', schemaPath], env);
+  const binaryTargets = ['native', 'darwin-arm64', 'darwin'];
+  for (const target of binaryTargets) {
+    console.log(`🔧 Running prisma generate for target: ${target}`);
+    runPrisma(['generate', '--schema', schemaPath, '--binary-target', target], env);
+  }
 
   console.log('📦 Running prisma migrate deploy...');
   runPrisma(['migrate', 'deploy', '--schema', schemaPath], env);
