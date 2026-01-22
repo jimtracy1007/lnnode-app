@@ -17,7 +17,7 @@ exports.default = async function(context) {
 
   console.log(`📦 Platform: ${electronPlatformName}, Architecture: ${actualArch}`);
 
-  // Check if ln-link is properly packaged (no asar)
+  // Check if lnlink-server is properly packaged (no asar)
   const resourcesBase = electronPlatformName === 'darwin'
     ? path.join(appOutDir, 'LN-Link.app/Contents/Resources')
     : path.join(appOutDir, 'resources');
@@ -54,32 +54,32 @@ exports.default = async function(context) {
     }
   }
 
-  const lnLinkPath = nodeModulesPath ? path.join(nodeModulesPath, 'ln-link') : null;
+  const lnLinkPath = nodeModulesPath ? path.join(nodeModulesPath, 'lnlink-server') : null;
   let lnLinkFound = false;
 
   if (lnLinkPath && fs.existsSync(lnLinkPath)) {
     lnLinkFound = true;
-    console.log(`✅ ln-link found at: ${lnLinkPath}`);
+    console.log(`✅ lnlink-server found at: ${lnLinkPath}`);
     const lnLinkPrismaPath = path.join(lnLinkPath, 'prisma');
     if (fs.existsSync(lnLinkPrismaPath)) {
-      console.log(`✅ ln-link prisma directory found at: ${lnLinkPrismaPath}`);
+      console.log(`✅ lnlink-server prisma directory found at: ${lnLinkPrismaPath}`);
     } else {
-      console.warn(`⚠️  Warning: ln-link prisma directory not found at: ${lnLinkPrismaPath}`);
+      console.warn(`⚠️  Warning: lnlink-server prisma directory not found at: ${lnLinkPrismaPath}`);
     }
   }
 
-  if (!lnLinkFound && existsInAsar('node_modules/ln-link/package.json')) {
+  if (!lnLinkFound && existsInAsar('node_modules/lnlink-server/package.json')) {
     lnLinkFound = true;
-    console.log(`✅ ln-link found inside app.asar at: ${appAsarPath}!node_modules/ln-link`);
-    if (existsInAsar('node_modules/ln-link/prisma/schema.prisma')) {
-      console.log('✅ ln-link prisma directory present inside app.asar');
+    console.log(`✅ lnlink-server found inside app.asar at: ${appAsarPath}!node_modules/lnlink-server`);
+    if (existsInAsar('node_modules/lnlink-server/prisma/schema.prisma')) {
+      console.log('✅ lnlink-server prisma directory present inside app.asar');
     } else {
-      console.warn('⚠️  Warning: ln-link prisma directory missing inside app.asar');
+      console.warn('⚠️  Warning: lnlink-server prisma directory missing inside app.asar');
     }
   }
 
   if (!lnLinkFound) {
-    console.warn('⚠️  Warning: ln-link package not found in unpacked directories or app.asar');
+    console.warn('⚠️  Warning: lnlink-server package not found in unpacked directories or app.asar');
   }
 
   // Check if Prisma client is properly unpacked

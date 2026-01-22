@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  Plan A prebuild script:
- - Use Prisma CLI (node_modules/prisma/build/index.js) against ln-link's schema
+ - Use Prisma CLI (node_modules/prisma/build/index.js) against lnlink-server's schema
  - Generate client and run migrate deploy into ./data/link/lnlink.db
  - This produces a fully migrated template DB that will be packed into the app
 */
@@ -32,8 +32,8 @@ function runPrisma(args, env) {
 
 function main() {
   // 优先从 dist/prisma 查找，如果不存在则回退到根目录的 prisma
-  const distSchemaPath = path.join(process.cwd(), 'node_modules', 'ln-link', 'dist', 'prisma', 'schema.prisma');
-  const rootSchemaPath = path.join(process.cwd(), 'node_modules', 'ln-link', 'prisma', 'schema.prisma');
+  const distSchemaPath = path.join(process.cwd(), 'node_modules', 'lnlink-server', 'dist', 'prisma', 'schema.prisma');
+  const rootSchemaPath = path.join(process.cwd(), 'node_modules', 'lnlink-server', 'prisma', 'schema.prisma');
   
   let schemaPath;
   if (fs.existsSync(distSchemaPath)) {
@@ -43,7 +43,7 @@ function main() {
     schemaPath = rootSchemaPath;
     console.log(`📁 Using schema from root: ${schemaPath}`);
   } else {
-    console.error(`ln-link schema.prisma not found at:`);
+    console.error(`lnlink-server schema.prisma not found at:`);
     console.error(`  - ${distSchemaPath}`);
     console.error(`  - ${rootSchemaPath}`);
     process.exit(1);

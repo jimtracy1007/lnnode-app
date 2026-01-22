@@ -8,7 +8,7 @@ const nostrService = require('./nostr-service');
 const detectPort = require('detect-port');
 
 
-const LnLinkElectron = require('ln-link');
+const LnLinkElectron = require('lnlink-server');
 class ExpressServer {
   constructor() {
     this.lnLink = null;
@@ -126,7 +126,7 @@ class ExpressServer {
       const availablePort = await this.findAvailablePort(basePort);
       this.port = availablePort.toString();
 
-      log.info(`Using port ${this.port} for LN-Link server`);
+      log.info(`Using port ${this.port} for lnlink-server`);
 
       // Plan A: ensure user database exists by copying from template at first run
       const dataPath = pathManager.getDataPath();
@@ -153,11 +153,11 @@ class ExpressServer {
         log.info(`Using existing user DB at: ${userDbPath}`);
       }
 
-      // Ensure LINK_DATABASE_URL is set for ln-link initialization
+      // Ensure LINK_DATABASE_URL is set for lnlink-server initialization
       process.env.LINK_DATABASE_URL = `file:${userDbPath}`;
       log.info(`Set LINK_DATABASE_URL: ${process.env.LINK_DATABASE_URL}`);
 
-      // Create LN-Link instance with configuration
+      // Create lnlink-server instance with configuration
       const config = {
         dataPath: dataPath,
         network: process.env.LINK_NETWORK || 'regtest', // default to testnet
@@ -174,24 +174,24 @@ class ExpressServer {
         rgbHost: process.env.LINK_RGB_HOST || '192.168.0.117'
       };
 
-      log.info('Creating LN-Link instance with config:', config);
+      log.info('Creating lnlink-server instance with config:', config);
 
       this.lnLink = new LnLinkElectron(config);
 
-      // Initialize LN-Link (sets up environment variables + database initialization)
-      log.info('Initializing LN-Link...');
+      // Initialize lnlink-server (sets up environment variables + database initialization)
+      log.info('Initializing lnlink-server...');
       await this.lnLink.initialize();
 
-      // Start LN-Link service
-      log.info('Starting LN-Link service...');
+      // Start lnlink-server service
+      log.info('Starting lnlink-server service...');
       await this.lnLink.start();
 
       this.serverReady = true;
-      log.info('LN-Link server started successfully');
+      log.info('lnlink-server started successfully');
 
       return true;
     } catch (error) {
-      log.error(`Failed to start LN-Link server: ${error.message}`);
+      log.error(`Failed to start lnlink-server: ${error.message}`);
       throw error;
     }
   }
@@ -200,11 +200,11 @@ class ExpressServer {
   // Stop the server
   async stop() {
     if (this.lnLink) {
-      log.info('Stopping LN-Link server');
+      log.info('Stopping lnlink-server');
       try {
         await this.lnLink.stop();
       } catch (e) {
-        log.error('Error stopping LN-Link server:', e);
+        log.error('Error stopping lnlink-server:', e);
       }
       this.lnLink = null;
       this.serverReady = false;
