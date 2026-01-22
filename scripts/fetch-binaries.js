@@ -85,10 +85,13 @@ function downloadWithCurl(url, outFile) {
 }
 
 function downloadFile(url, outFile) {
-  /** build fallback mirrors if applicable */
+  /* build fallback mirrors if applicable */
   const urls = [url];
-  if (url.includes('archive.torproject.org/tor-package-archive/torbrowser/')) {
-    urls.push(url.replace('archive.torproject.org/tor-package-archive', 'dist.torproject.org'));
+  if (process.env.TOR_MIRROR && url.includes('torproject.org')) {
+    // Allows user to provide a custom mirror base (e.g. "https://mirror.example.com")
+    // Replaces "https://<original_host>" with the custom mirror
+    const customUrl = url.replace(/^https:\/\/[^/]+/, process.env.TOR_MIRROR);
+    urls.unshift(customUrl);
   }
 
   let lastError = null;
@@ -243,8 +246,9 @@ function fetchForKey(json, key, root) {
       }
       
       // 检查是否包含 Tor 相关文件，如果未启用 Tor 则跳过
+      // 默认开启 Tor 下载，除非显式禁用 (LINK_ENABLE_TOR === 'false')
       const isTorRelated = names.some((n) => n === 'tor' || n === 'libevent-2.1.7.dylib');
-      if (isTorRelated && process.env.LINK_ENABLE_TOR !== 'true') {
+      if (isTorRelated && process.env.LINK_ENABLE_TOR === 'false') {
         logInfo(`Skip download (Tor disabled via LINK_ENABLE_TOR): ${names.join(', ')}`);
         continue;
       }
