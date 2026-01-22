@@ -306,6 +306,12 @@ jobs:
           name: dist-mac-arm
           path: dist/mac-arm/
 
+      - name: Download artifacts (Windows)
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-windows-x64
+          path: dist/windows-x64/
+
       - name: Consolidate artifacts to dist root
         run: |
           # Move all artifacts to dist root to avoid duplicate matching
@@ -322,12 +328,6 @@ jobs:
           echo "Final dist contents:"
           ls -la dist/
 
-      - name: Download artifacts (Windows)
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-windows-x64
-          path: dist/windows-x64/
-
       - name: List downloaded files
         run: |
           echo "Files in dist directory:"
@@ -342,6 +342,7 @@ jobs:
           echo ""
           echo "BLOCKMAP files found:"
           find dist -name "*.blockmap" -type f || echo "No BLOCKMAP files found"
+
 
       - name: Generate build hash
         id: build-hash
