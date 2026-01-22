@@ -53,9 +53,6 @@ class NostrService {
       // Default relay list with read/write settings
       return {
         'wss://relay01.lnfi.network': { read: true, write: true },
-        'wss://relay02.lnfi.network': { read: true, write: true },
-        'wss://nostr-01.yakihonne.com': { read: true, write: true },
-        'wss://nostr-02.yakihonne.com': { read: true, write: true },
       };
     } catch (error) {
       throw new Error(`Failed to get relays: ${error.message}`);
