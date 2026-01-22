@@ -31,9 +31,21 @@ function runPrisma(args, env) {
 }
 
 function main() {
-  const schemaPath = path.join(process.cwd(), 'node_modules', 'ln-link', 'prisma', 'schema.prisma');
-  if (!fs.existsSync(schemaPath)) {
-    console.error(`ln-link schema.prisma not found at ${schemaPath}`);
+  // 优先从 dist/prisma 查找，如果不存在则回退到根目录的 prisma
+  const distSchemaPath = path.join(process.cwd(), 'node_modules', 'ln-link', 'dist', 'prisma', 'schema.prisma');
+  const rootSchemaPath = path.join(process.cwd(), 'node_modules', 'ln-link', 'prisma', 'schema.prisma');
+  
+  let schemaPath;
+  if (fs.existsSync(distSchemaPath)) {
+    schemaPath = distSchemaPath;
+    console.log(`📁 Using schema from dist: ${schemaPath}`);
+  } else if (fs.existsSync(rootSchemaPath)) {
+    schemaPath = rootSchemaPath;
+    console.log(`📁 Using schema from root: ${schemaPath}`);
+  } else {
+    console.error(`ln-link schema.prisma not found at:`);
+    console.error(`  - ${distSchemaPath}`);
+    console.error(`  - ${rootSchemaPath}`);
     process.exit(1);
   }
 
