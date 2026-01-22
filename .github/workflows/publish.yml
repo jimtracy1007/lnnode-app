@@ -7,51 +7,51 @@ permissions:
   contents: write
 
 jobs:
-  build-mac-amd:
-    runs-on: macos-13
-    environment: prod-deploy
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+  # build-mac-amd:
+  #   runs-on: macos-13
+  #   environment: prod-deploy
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
 
-      - name: Remove package-lock.json
-        run: rm -f package-lock.json
+  #     - name: Remove package-lock.json
+  #       run: rm -f package-lock.json
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          registry-url: https://registry.npmjs.org
-          cache: "yarn"
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22
+  #         registry-url: https://registry.npmjs.org
+  #         cache: "yarn"
 
-      - name: Cache Electron (macOS)
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/Library/Caches/electron
-            ~/Library/Caches/electron-builder
-          key: ${{ runner.os }}-electron-${{ hashFiles('yarn.lock') }}
+  #     - name: Cache Electron (macOS)
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: |
+  #           ~/Library/Caches/electron
+  #           ~/Library/Caches/electron-builder
+  #         key: ${{ runner.os }}-electron-${{ hashFiles('yarn.lock') }}
 
-      - name: Install deps
-        run: yarn install --frozen-lockfile
+  #     - name: Install deps
+  #       run: yarn install --frozen-lockfile
 
-      - name: Prebuild Prisma (mac-amd)
-        run: yarn prebuild
+  #     - name: Prebuild Prisma (mac-amd)
+  #       run: yarn prebuild
 
-      - name: Build (mac-amd)
-        env:
-          ELECTRON_BUILDER_PUBLISH: never
-        run: npx electron-builder --mac=dmg --x64 --publish=never
+  #     - name: Build (mac-amd)
+  #       env:
+  #         ELECTRON_BUILDER_PUBLISH: never
+  #       run: npx electron-builder --mac=dmg --x64 --publish=never
 
-      - name: Upload artifacts (mac-amd)
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-mac-amd
-          path: |
-            dist/*.dmg
-            dist/*.blockmap
+  #     - name: Upload artifacts (mac-amd)
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: dist-mac-amd
+  #         path: |
+  #           dist/*.dmg
+  #           dist/*.blockmap
 
   build-mac-arm:
     runs-on: macos-latest
@@ -274,7 +274,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     needs:
-      - build-mac-amd
+      # - build-mac-amd
       - build-mac-arm
       - build-windows
     environment: prod-deploy
@@ -294,11 +294,11 @@ jobs:
           registry-url: https://registry.npmjs.org
           cache: "yarn"
 
-      - name: Download artifacts (mac-amd)
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-mac-amd
-          path: dist/mac-amd/
+      # - name: Download artifacts (mac-amd)
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: dist-mac-amd
+      #     path: dist/mac-amd/
 
       - name: Download artifacts (mac-arm)
         uses: actions/download-artifact@v4
@@ -310,9 +310,9 @@ jobs:
         run: |
           # Move all artifacts to dist root to avoid duplicate matching
           mkdir -p dist
-          if [ -d "dist/mac-amd" ]; then
-            mv dist/mac-amd/* dist/ 2>/dev/null || true
-          fi
+          # if [ -d "dist/mac-amd" ]; then
+          #   mv dist/mac-amd/* dist/ 2>/dev/null || true
+          # fi
           if [ -d "dist/mac-arm" ]; then
             mv dist/mac-arm/* dist/ 2>/dev/null || true
           fi
