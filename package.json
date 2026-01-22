@@ -1,6 +1,6 @@
 {
   "name": "ln-link-app",
-  "version": "1.0.0-alpha.5",
+  "version": "1.0.0-alpha.6",
   "description": "Lightning Network Node Application built with Electron",
   "main": "src/main.js",
   "scripts": {
@@ -36,6 +36,7 @@
   "dependencies": {
     "@prisma/client": "6.14.0",
     "detect-port": "^1.5.1",
+    "lnlink-server": "^1.0.1",
     "dotenv": "^17.2.3",
     "electron-log": "^5.4.0",
     "electron-store": "^8.1.0",
