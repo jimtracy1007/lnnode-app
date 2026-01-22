@@ -1,3 +1,6 @@
+// 加载 .env 文件中的环境变量
+require('dotenv').config();
+
 const { app } = require('electron');
 global.crypto = require('crypto'); // Add global crypto object
 const { ipcMain } = require('electron');

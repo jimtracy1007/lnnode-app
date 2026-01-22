@@ -4,6 +4,14 @@
  * - Downloads and extracts platform-specific artifacts into bin/<platform-arch>/
  * - Uses system curl and tar to avoid Node deps (preinstall runs before deps are available)
  */
+
+// 加载 .env 文件（如果存在）
+try {
+  require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+} catch (e) {
+  // dotenv 可能还未安装（preinstall 阶段），忽略错误
+}
+
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -233,6 +241,13 @@ function fetchForKey(json, key, root) {
         logInfo(`Skip download (Node.js runtime only): ${url}`);
         continue;
       }
+      
+      // 检查是否包含 Tor 相关文件，如果未启用 Tor 则跳过
+      const isTorRelated = names.some((n) => n === 'tor' || n === 'libevent-2.1.7.dylib');
+      if (isTorRelated && process.env.LINK_ENABLE_TOR !== 'true') {
+        logInfo(`Skip download (Tor disabled via LINK_ENABLE_TOR): ${names.join(', ')}`);
+        continue;
+      }
       const allExist = names.every((n) => fs.existsSync(path.join(destDir, n)));
       if (allExist) {
         logInfo(`All targets already present for URL: ${url}`);
@@ -296,10 +311,30 @@ function fetchForKey(json, key, root) {
             matched = findFirstMatch(extractDir, 'tor') || findFirstMatch(extractDir, 'tor.real') || findFirstMatch(extractDir, 'tor.exe');
           } else if (name === 'litd') {
             matched = findFirstMatch(extractDir, 'litd') || findFirstMatch(extractDir, 'litd.exe');
+          } else if (name === 'rgb-lightning-node') {
+            matched = findFirstMatch(extractDir, 'rgb-lightning-node') || 
+                      findFirstMatch(extractDir, 'rgb-lightning-node.exe') || 
+                      findFirstMatch(extractDir, 'rgb-lightning-node-macos-x86_64') || 
+                      findFirstMatch(extractDir, 'rgb-lightning-node-macos-aarch64') ||
+                      findFirstMatch(extractDir, 'rgb-lightning-node-linux-x86_64');
           } else {
             matched = findFirstMatch(extractDir, name);
           }
           if (!matched) {
+            logInfo(`Contents of extract dir:`);
+            const listFiles = (dir) => {
+              const entries = fs.readdirSync(dir, { withFileTypes: true });
+              for (const entry of entries) {
+                const fullPath = path.join(dir, entry.name);
+                if (entry.isDirectory()) {
+                  listFiles(fullPath);
+                } else {
+                  logInfo(` - ${fullPath}`);
+                }
+              }
+            };
+            try { listFiles(extractDir); } catch(e) { logError(e.message); }
+            
             throw new Error(`File '${name}' not found in extracted archive from ${url}`);
           }
           fs.copyFileSync(matched, targetPath);

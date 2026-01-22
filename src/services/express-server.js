@@ -130,7 +130,7 @@ class ExpressServer {
 
       // Plan A: ensure user database exists by copying from template at first run
       const dataPath = pathManager.getDataPath();
-      const userDbDir = path.join(dataPath, 'link');
+      const userDbDir = path.join(dataPath, '.link');
       const userDbPath = path.join(userDbDir, 'lnlink.db');
       const templateDbPath = path.join(pathManager.getAppDataPath(), 'link', 'lnlink.db');
 
@@ -166,7 +166,12 @@ class ExpressServer {
         enableTor: process.env.LINK_ENABLE_TOR === 'true' || false,
         owner: nostrService.getNpub(),
         binaryPath: pathManager.getBinaryPath(),
-        debug: !process.env.NODE_ENV || process.env.NODE_ENV !== 'production'
+        debug: !process.env.NODE_ENV || process.env.NODE_ENV !== 'production',
+        // 添加缺失的环境变量
+        reportBaseUrl: process.env.LINK_REPORT_BASE_URL || 'https://devoffaucet.unift.xyz',
+        reportAddress: process.env.LINK_REPORT_ADDRESS || 'npub1q7amuklx0fjw76dtulzzhhjmff8du5lyngw377d89hhrmj49w48ssltn7y',
+        rgbLdkPeerListeningPort: process.env.LINK_RGB_LDK_PEER_LISTENING_PORT || 9750,
+        rgbHost: process.env.LINK_RGB_HOST || '192.168.0.117'
       };
 
       log.info('Creating LN-Link instance with config:', config);
