@@ -121,8 +121,8 @@
       ],
       "extraFiles": [
         {
-          "from": "bin/win-${arch}/",
-          "to": "Resources/bin/win-${arch}/",
+          "from": "bin/win32-${arch}/",
+          "to": "Resources/bin/win32-${arch}/",
           "filter": [
             "**/*"
           ]
