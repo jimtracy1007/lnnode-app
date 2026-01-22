@@ -39,7 +39,7 @@ function main() {
 
   // Ensure generator block contains required binaryTargets for mac builds
   const schemaContent = fs.readFileSync(schemaPath, 'utf8');
-  const binaryTargetsLine = '  binaryTargets = ["native", "darwin", "darwin-arm64"]';
+  const binaryTargetsLine = '  binaryTargets = ["native", "darwin", "darwin-arm64", "windows", "debian-openssl-3.0.x"]';
   if (!schemaContent.includes('binaryTargets')) {
     const providerLine = '  provider = "prisma-client-js"';
     if (!schemaContent.includes(providerLine)) {
