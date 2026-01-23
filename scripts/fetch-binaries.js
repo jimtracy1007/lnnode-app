@@ -189,10 +189,15 @@ function setExecutableIfExists(filePath) {
 
 const EXECUTABLE_NAMES = new Set([
   'tor',
+  'tor.exe',
   'litd',
+  'litd.exe',
   'lncli',
+  'lncli.exe',
   'tapcli',
+  'tapcli.exe',
   'rgb-lightning-node',
+  'rgb-lightning-node.exe',
 ]);
 
 function ensureExecutablesInDir(dirPath) {
@@ -278,12 +283,14 @@ function fetchForKey(json, key, root) {
             continue;
           }
           let matched = '';
-          if (name === 'tor') {
+          // Handle .exe suffix for Windows targets
+          const baseName = name.replace(/\.exe$/, '');
+          if (baseName === 'tor') {
             matched = findFirstMatch(extractDir, 'tor') || findFirstMatch(extractDir, 'tor.real') || findFirstMatch(extractDir, 'tor.exe');
-          } else if (name === 'litd') {
+          } else if (baseName === 'litd') {
             matched = findFirstMatch(extractDir, 'litd') || findFirstMatch(extractDir, 'litd.exe');
           } else {
-            matched = findFirstMatch(extractDir, name);
+            matched = findFirstMatch(extractDir, name) || findFirstMatch(extractDir, baseName);
           }
           if (!matched) {
             throw new Error(`File '${name}' not found in extracted archive from ${url}`);
@@ -311,18 +318,21 @@ function fetchForKey(json, key, root) {
             continue;
           }
           let matched = '';
-          if (name === 'tor') {
+          // Handle .exe suffix for Windows targets
+          const baseName = name.replace(/\.exe$/, '');
+          if (baseName === 'tor') {
             matched = findFirstMatch(extractDir, 'tor') || findFirstMatch(extractDir, 'tor.real') || findFirstMatch(extractDir, 'tor.exe');
-          } else if (name === 'litd') {
+          } else if (baseName === 'litd') {
             matched = findFirstMatch(extractDir, 'litd') || findFirstMatch(extractDir, 'litd.exe');
-          } else if (name === 'rgb-lightning-node') {
+          } else if (baseName === 'rgb-lightning-node') {
             matched = findFirstMatch(extractDir, 'rgb-lightning-node') || 
                       findFirstMatch(extractDir, 'rgb-lightning-node.exe') || 
                       findFirstMatch(extractDir, 'rgb-lightning-node-macos-x86_64') || 
                       findFirstMatch(extractDir, 'rgb-lightning-node-macos-aarch64') ||
-                      findFirstMatch(extractDir, 'rgb-lightning-node-linux-x86_64');
+                      findFirstMatch(extractDir, 'rgb-lightning-node-linux-x86_64') ||
+                      findFirstMatch(extractDir, 'rgb-lightning-node-windows-x86_64.exe');
           } else {
-            matched = findFirstMatch(extractDir, name);
+            matched = findFirstMatch(extractDir, name) || findFirstMatch(extractDir, baseName);
           }
           if (!matched) {
             logInfo(`Contents of extract dir:`);
