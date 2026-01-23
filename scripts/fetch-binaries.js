@@ -122,6 +122,27 @@ function extractTarGz(archiveFile, destDir) {
 }
 
 function extractZip(archiveFile, destDir) {
+  // On Windows, prefer tar (available on Windows 10+) or PowerShell
+  if (process.platform === 'win32') {
+    const tarPath = which('tar');
+    if (tarPath) {
+      ensureDir(destDir);
+      const res = spawnSync(tarPath, ['-xf', archiveFile, '-C', destDir], { stdio: 'inherit' });
+      if (res.status === 0) return;
+    }
+
+    // Fallback to PowerShell
+    ensureDir(destDir);
+    const psArgs = [
+      '-NoProfile',
+      '-NonInteractive',
+      '-Command',
+      `Expand-Archive -LiteralPath '${archiveFile}' -DestinationPath '${destDir}' -Force`
+    ];
+    const res = spawnSync('powershell', psArgs, { stdio: 'inherit' });
+    if (res.status === 0) return;
+  }
+
   const unzipPath = which('unzip');
   if (!unzipPath) {
     throw new Error('unzip not found in PATH');
@@ -189,15 +210,10 @@ function setExecutableIfExists(filePath) {
 
 const EXECUTABLE_NAMES = new Set([
   'tor',
-  'tor.exe',
   'litd',
-  'litd.exe',
   'lncli',
-  'lncli.exe',
   'tapcli',
-  'tapcli.exe',
   'rgb-lightning-node',
-  'rgb-lightning-node.exe',
 ]);
 
 function ensureExecutablesInDir(dirPath) {
