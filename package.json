@@ -1,6 +1,6 @@
 {
   "name": "ln-link-app",
-  "version": "1.0.0-alpha.7",
+  "version": "1.0.0-alpha.8",
   "description": "Lightning Network Node Application built with Electron",
   "main": "src/main.js",
   "scripts": {
@@ -80,6 +80,7 @@
       "node_modules/lnlink-server/prisma/**",
       "bin/**"
     ],
+    "afterSign": "scripts/afterSign.js",
     "mac": {
       "category": "public.app-category.finance",
       "icon": "assets/lnfi.png",
