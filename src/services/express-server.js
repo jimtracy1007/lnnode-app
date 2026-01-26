@@ -194,7 +194,7 @@ class ExpressServer {
         network: process.env.LINK_NETWORK || 'regtest', // default to testnet
         httpPort: parseInt(this.port),
         name: 'LN-Link-App', // Application name
-        enableTor: process.env.LINK_ENABLE_TOR === 'true' || true,
+        enableTor: process.env.LINK_ENABLE_TOR !== 'false',
         owner: nostrService.getNpub(),
         binaryPath: pathManager.getBinaryPath(),
         debug: !process.env.NODE_ENV || process.env.NODE_ENV !== 'production',
