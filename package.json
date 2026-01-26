@@ -55,6 +55,7 @@
     "files": [
       "src/**/*",
       "assets/**/*",
+      ".env",
       {
         "from": "node_modules/.prisma",
         "to": "node_modules/.prisma",
@@ -82,9 +83,8 @@
     "mac": {
       "category": "public.app-category.finance",
       "icon": "assets/lnfi.png",
-      "hardenedRuntime": true,
+      "hardenedRuntime": false,
       "gatekeeperAssess": false,
-      "identity": null,
       "target": [
         {
           "target": "dmg",

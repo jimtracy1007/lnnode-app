@@ -1,7 +1,13 @@
 // 加载 .env 文件中的环境变量
-require('dotenv').config();
-
+const path = require('path');
 const { app } = require('electron');
+
+// 确定 .env 文件路径（开发和打包环境）
+const envPath = app.isPackaged 
+  ? path.join(process.resourcesPath, 'app.asar', '.env')
+  : path.join(__dirname, '..', '.env');
+
+require('dotenv').config({ path: envPath });
 global.crypto = require('crypto'); // Add global crypto object
 const { ipcMain } = require('electron');
 const log = require('./utils/logger');
