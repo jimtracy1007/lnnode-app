@@ -132,7 +132,7 @@ class ExpressServer {
       const dataPath = pathManager.getDataPath();
       const userDbDir = path.join(dataPath, '.link');
       const userDbPath = path.join(userDbDir, 'lnlink.db');
-      const templateDbPath = path.join(pathManager.getAppDataPath(), 'link', 'lnlink.db');
+      const templateDbPath = path.join(pathManager.getAppDataPath(), '.link', 'lnlink.db');
 
       if (!fs.existsSync(userDbPath)) {
         try {

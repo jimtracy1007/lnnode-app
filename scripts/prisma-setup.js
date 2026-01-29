@@ -66,7 +66,7 @@ function main() {
     console.log('🛠️ Updated schema.prisma to include binaryTargets for mac binaries.');
   }
 
-  const dataDir = path.join(process.cwd(), 'data', 'link');
+  const dataDir = path.join(process.cwd(), 'data', '.link');
   ensureDir(dataDir);
   const dbPath = path.join(dataDir, 'lnlink.db');
 
