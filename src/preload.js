@@ -20,6 +20,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onServerStatus: (callback) => ipcRenderer.on('server-status', callback),
     onShowServerStatus: (callback) => ipcRenderer.on('show-server-status', callback),
     
+    // Open external URL in default browser
+    openExternal: (url) => ipcRenderer.invoke('open-external', url),
+    
     // Remove listeners
     removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel)
 });

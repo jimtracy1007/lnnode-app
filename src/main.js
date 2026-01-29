@@ -9,7 +9,7 @@ const envPath = app.isPackaged
 
 require('dotenv').config({ path: envPath });
 global.crypto = require('crypto'); // Add global crypto object
-const { ipcMain } = require('electron');
+const { ipcMain, shell } = require('electron');
 const log = require('./utils/logger');
 
 const processManager = require('./services/process-manager');
@@ -64,6 +64,17 @@ function registerServerHandlers() {
   // Get app version
   ipcMain.handle('get-app-version', async () => {
     return app.getVersion();
+  });
+
+  // Open external URL in default browser
+  ipcMain.handle('open-external', async (event, url) => {
+    try {
+      await shell.openExternal(url);
+      return { success: true };
+    } catch (error) {
+      log.error('Failed to open external URL:', error);
+      return { success: false, message: error.message };
+    }
   });
 
   log.info('Server IPC handlers registered');
