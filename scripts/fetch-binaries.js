@@ -115,7 +115,11 @@ function extractTarGz(archiveFile, destDir) {
     throw new Error('tar not found in PATH');
   }
   ensureDir(destDir);
-  const res = spawnSync(tarPath, ['-xzf', archiveFile, '-C', destDir], { stdio: 'inherit' });
+  
+  // Windows tar requires proper path handling
+  const args = ['-xzf', archiveFile, '-C', destDir];
+  const res = spawnSync(tarPath, args, { stdio: 'inherit' });
+  
   if (res.status !== 0) {
     throw new Error(`tar extraction failed with status ${res.status}`);
   }
@@ -199,6 +203,11 @@ function copyRecursive(src, dest) {
 }
 
 function setExecutableIfExists(filePath) {
+  // Skip chmod on Windows (not needed, .exe files are inherently executable)
+  if (process.platform === 'win32') {
+    return;
+  }
+  
   try {
     const mode = fs.statSync(filePath).mode;
     // u+x g+x o+x
@@ -210,10 +219,15 @@ function setExecutableIfExists(filePath) {
 
 const EXECUTABLE_NAMES = new Set([
   'tor',
+  'tor.exe',
   'litd',
+  'litd.exe',
   'lncli',
+  'lncli.exe',
   'tapcli',
+  'tapcli.exe',
   'rgb-lightning-node',
+  'rgb-lightning-node.exe',
 ]);
 
 function ensureExecutablesInDir(dirPath) {
