@@ -1,5 +1,6 @@
 const { BrowserWindow } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const log = require('../utils/logger');
 const pathManager = require('../utils/path-manager');
 const expressServer = require('../services/express-server');
@@ -72,91 +73,20 @@ class WindowManager {
     }
   }
 
+  // Load HTML template from file
+  _loadTemplate(templateName) {
+    const templatePath = path.join(__dirname, 'templates', `${templateName}.html`);
+    try {
+      return fs.readFileSync(templatePath, 'utf-8');
+    } catch (error) {
+      log.error(`Failed to load template ${templateName}: ${error.message}`);
+      throw error;
+    }
+  }
+
   // Show loading screen
   async _showLoadingScreen() {
-    const loadingHTML = `
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Lnfi Network LN Node</title>
-          <style>
-            html, body {
-              height: 100%;
-              width: 100%;
-              margin: 0;
-              padding: 0;
-              overflow: hidden;
-              background-color: #1e1e1e;
-            }
-            body {
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              color: #e0e0e0;
-              text-align: center;
-              background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
-              display: flex;
-              flex-direction: column;
-              justify-content: center;
-              align-items: center;
-            }
-            .container {
-              max-width: 600px;
-              background: rgba(30, 30, 30, 0.95);
-              padding: 30px;
-              border-radius: 8px;
-              box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            }
-            h1 { 
-              color: #fff; 
-              margin-bottom: 20px;
-            }
-            .loader {
-              border: 5px solid rgba(255,255,255,0.1);
-              border-radius: 50%;
-              border-top: 5px solid #4ecdc4;
-              width: 50px;
-              height: 50px;
-              animation: spin 1s linear infinite;
-              margin: 20px auto;
-            }
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-            .status {
-              margin-top: 20px;
-              font-size: 14px;
-              color: #b0b0b0;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>LN Node</h1>
-            <p>Starting services, please wait...</p>
-            <div class="loader"></div>
-            <div class="status" id="status">Initializing...</div>
-          </div>
-          <script>
-            // Simple status update animation
-            const messages = [
-              "Checking environment...",
-              "Preparing services...",
-              "Loading modules...",
-              "Starting server..."
-            ];
-            let index = 0;
-            const statusEl = document.getElementById('status');
-            setInterval(() => {
-              statusEl.textContent = messages[index % messages.length];
-              index++;
-            }, 2000);
-            
-            // Ensure document title is correct
-            document.title = "Lnfi Network LN Node";
-          </script>
-        </body>
-      </html>
-    `;
+    const loadingHTML = this._loadTemplate('loading');
     
     // Use data URL to load HTML content, avoiding file system access delay
     await this.mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(loadingHTML)}`);
@@ -166,75 +96,14 @@ class WindowManager {
   async showErrorScreen(error) {
     if (!this.mainWindow) return;
     
-    const errorHTML = `
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Lnfi Network LN Node - Error</title>
-          <style>
-            html, body {
-              height: 100%;
-              width: 100%;
-              margin: 0;
-              padding: 0;
-              overflow: hidden;
-              background-color: #1e1e1e;
-            }
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              color: #e0e0e0;
-              text-align: center;
-              background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
-              display: flex;
-              justify-content: center;
-              align-items: center;
-            }
-            .container {
-              max-width: 600px;
-              background: rgba(30, 30, 30, 0.95);
-              padding: 30px;
-              border-radius: 8px;
-              box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            }
-            h1 { color: #f87171; }
-            .error-details {
-              background: rgba(248, 113, 113, 0.1);
-              border-left: 4px solid #f87171;
-              padding: 10px;
-              text-align: left;
-              margin: 20px 0;
-              font-family: monospace;
-              white-space: pre-wrap;
-              overflow-x: auto;
-              color: #e0e0e0;
-            }
-            button {
-              background: #4ecdc4;
-              color: #121212;
-              border: none;
-              padding: 10px 20px;
-              border-radius: 4px;
-              cursor: pointer;
-              margin-top: 20px;
-              font-weight: bold;
-            }
-            button:hover { background: #01a299; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>Server Start Failed</h1>
-            <p>Unable to start Lnfi Network LN Node server.</p>
-            <div class="error-details">${error.message}</div>
-            <p>Please check the log files for more information.</p>
-            <button onclick="window.location.reload()">Retry</button>
-          </div>
-          <script>
-            // Ensure document title is correct
-            document.title = "Lnfi Network LN Node - Error";
-          </script>
-        </body>
-      </html>
+    let errorHTML = this._loadTemplate('error');
+    
+    // Inject error message into template
+    const errorMessage = error.message || 'An unexpected error occurred.';
+    errorHTML += `
+      <script>
+        document.getElementById('error-message').textContent = ${JSON.stringify(errorMessage)};
+      </script>
     `;
     
     try {
@@ -248,64 +117,15 @@ class WindowManager {
   async showConnectionErrorScreen(errorDescription) {
     if (!this.mainWindow) return;
     
-    const connectionErrorHTML = `
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Lnfi Network LN Node - Connection Error</title>
-          <style>
-            html, body {
-              height: 100%;
-              width: 100%;
-              margin: 0;
-              padding: 0;
-              overflow: hidden;
-              background-color: #1e1e1e;
-            }
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              color: #e0e0e0;
-              text-align: center;
-              background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
-              display: flex;
-              justify-content: center;
-              align-items: center;
-            }
-            .container {
-              max-width: 600px;
-              background: rgba(30, 30, 30, 0.95);
-              padding: 30px;
-              border-radius: 8px;
-              box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            }
-            h1 { color: #f87171; }
-            button {
-              background: #4ecdc4;
-              color: #121212;
-              border: none;
-              padding: 10px 20px;
-              border-radius: 4px;
-              cursor: pointer;
-              margin-top: 20px;
-              font-weight: bold;
-            }
-            button:hover { background: #01a299; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>Connection Error</h1>
-            <p>Unable to connect to LN Node server.</p>
-            <p>Error: ${errorDescription}</p>
-            <p>Please ensure the server is running and port ${expressServer.getPort()} is accessible.</p>
-            <button onclick="window.location.reload()">Retry</button>
-          </div>
-          <script>
-            // Ensure document title is correct
-            document.title = "Lnfi Network LN Node - Connection Error";
-          </script>
-        </body>
-      </html>
+    let connectionErrorHTML = this._loadTemplate('connection-error');
+    
+    // Inject error details into template
+    const port = expressServer.getPort();
+    connectionErrorHTML += `
+      <script>
+        document.getElementById('error-description').textContent = 'Error: ' + ${JSON.stringify(errorDescription)};
+        document.getElementById('port-info').textContent = 'Please ensure the server is running and port ${port} is accessible.';
+      </script>
     `;
     
     try {

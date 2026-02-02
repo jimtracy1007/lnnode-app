@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>NodeFlow</title>
+    <style>
+      :root {
+        --lime-primary: #d0f224;
+        --bg-dark: #0f0f0f;
+        --card-bg: #1a1a1a;
+        --text-primary: #ffffff;
+        --text-secondary: #a0a0a0;
+      }
+      html, body {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: var(--bg-dark);
+      }
+      body {
+        font-family: "Inter", "Segoe UI", sans-serif;
+        color: var(--text-primary);
+        text-align: center;
+        background-color: var(--bg-dark);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+      .container {
+        max-width: 600px;
+        background: var(--card-bg);
+        padding: 30px;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      }
+      h1 { 
+        color: var(--text-primary);
+        margin-bottom: 20px;
+        font-weight: 600;
+      }
+      .loader {
+        border: 5px solid rgba(255,255,255,0.1);
+        border-radius: 50%;
+        border-top: 5px solid var(--lime-primary);
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      .status {
+        margin-top: 20px;
+        font-size: 14px;
+        color: var(--text-secondary);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>NodeFlow</h1>
+      <p>Starting services, please wait...</p>
+      <div class="loader"></div>
+      <div class="status" id="status">Initializing...</div>
+    </div>
+    <script>
+      // Simple status update animation
+      const messages = [
+        "Checking environment...",
+        "Preparing services...",
+        "Loading modules...",
+        "Starting server..."
+      ];
+      let index = 0;
+      const statusEl = document.getElementById('status');
+      setInterval(() => {
+        statusEl.textContent = messages[index % messages.length];
+        index++;
+      }, 2000);
+    </script>
+  </body>
+</html>

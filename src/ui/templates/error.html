@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>NodeFlow - Error</title>
+    <style>
+      :root {
+        --lime-primary: #d0f224;
+        --bg-dark: #0f0f0f;
+        --card-bg: #1a1a1a;
+        --text-primary: #ffffff;
+        --text-secondary: #a0a0a0;
+      }
+      html, body {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: var(--bg-dark);
+      }
+      body { 
+        font-family: "Inter", "Segoe UI", sans-serif;
+        color: var(--text-primary);
+        text-align: center;
+        background-color: var(--bg-dark);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .container {
+        max-width: 600px;
+        background: var(--card-bg);
+        padding: 30px;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      }
+      h1 { 
+        color: #f87171;
+        font-weight: 600;
+      }
+      .error-details {
+        background: rgba(248, 113, 113, 0.1);
+        border-left: 4px solid #f87171;
+        padding: 10px;
+        text-align: left;
+        margin: 20px 0;
+        font-family: monospace;
+        white-space: pre-wrap;
+        overflow-x: auto;
+        color: var(--text-primary);
+      }
+      button {
+        background: var(--lime-primary);
+        color: #000;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 20px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: opacity 0.2s;
+      }
+      button:hover { opacity: 0.9; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Server Start Failed</h1>
+      <p>Unable to start NodeFlow server.</p>
+      <div class="error-details" id="error-message">An unexpected error occurred.</div>
+      <p>Please check the log files for more information.</p>
+      <button onclick="window.location.reload()">Retry</button>
+    </div>
+  </body>
+</html>
