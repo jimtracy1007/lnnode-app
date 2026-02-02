@@ -246,6 +246,49 @@ function ensureExecutablesInDir(dirPath) {
   }
 }
 
+function codesignMacBinaries(dirPath) {
+  // Only sign on macOS
+  if (process.platform !== 'darwin') {
+    return;
+  }
+  
+  try {
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+    const filesToSign = [];
+    
+    for (const entry of entries) {
+      if (!entry.isFile()) continue;
+      const full = path.join(dirPath, entry.name);
+      
+      // Sign executables and dynamic libraries
+      if (EXECUTABLE_NAMES.has(entry.name) || entry.name.endsWith('.dylib')) {
+        filesToSign.push(full);
+      }
+    }
+    
+    if (filesToSign.length === 0) {
+      return;
+    }
+    
+    logInfo(`Signing ${filesToSign.length} binaries for macOS...`);
+    for (const file of filesToSign) {
+      const result = spawnSync('codesign', ['-s', '-', '--force', '--deep', file], {
+        encoding: 'utf8',
+      });
+      
+      if (result.status === 0) {
+        logInfo(`Signed: ${path.basename(file)}`);
+      } else if (result.stderr && result.stderr.includes('is already signed')) {
+        // Already signed, that's fine
+      } else {
+        logWarn(`Failed to sign ${path.basename(file)}: ${result.stderr || result.error}`);
+      }
+    }
+  } catch (err) {
+    logWarn(`Code signing error: ${err.message}`);
+  }
+}
+
 function fetchForKey(json, key, root) {
   const [platform, arch] = key.split('-');
   const binRoot = path.join(root, 'bin');
@@ -404,6 +447,8 @@ function fetchForKey(json, key, root) {
     }
     // Ensure permissions for any pre-existing executables in this dir (e.g., rgb-lightning-node)
     ensureExecutablesInDir(destDir);
+    // Sign binaries on macOS to prevent security policy issues
+    codesignMacBinaries(destDir);
   } finally {
     try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (_) {}
   }
