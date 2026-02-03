@@ -11,10 +11,6 @@ class NostrService {
     
     // Default relay list
     this.defaultRelays = [
-      'wss://relay.damus.io',
-      'wss://relay.nostr.band',
-      'wss://nos.lol',
-      'wss://relay.nostr.info',
       'wss://relay.snort.social'
     ];
     
@@ -52,7 +48,7 @@ class NostrService {
       }
       // Default relay list with read/write settings
       return {
-        'wss://relay01.lnfi.network': { read: true, write: true },
+        'wss://relay.snort.social': { read: true, write: true },
       };
     } catch (error) {
       throw new Error(`Failed to get relays: ${error.message}`);

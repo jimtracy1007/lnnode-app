@@ -157,52 +157,19 @@ class ExpressServer {
       process.env.LINK_DATABASE_URL = `file:${userDbPath}`;
       log.info(`Set LINK_DATABASE_URL: ${process.env.LINK_DATABASE_URL}`);
 
-      // Set required Nostr and LND peer configuration for packaged app
-      if (!process.env.LINK_NOSTR_NODE_NPUBKEY) {
-        process.env.LINK_NOSTR_NODE_NPUBKEY = '027d2f1be71dc24c60b15070489d4ef274dd6aac236d02c67c76d6935defba56a6';
-      }
-      if (!process.env.LINK_NOSTR_NODE_HOST) {
-        process.env.LINK_NOSTR_NODE_HOST = 'regtest.lnfi.network:9735';
-      }
-      if (!process.env.LINK_NOSTR_RELAY_URI) {
-        process.env.LINK_NOSTR_RELAY_URI = 'wss://relay01.lnfi.network';
-      }
-      if (!process.env.LINK_REPORT_ADDRESS) {
-        process.env.LINK_REPORT_ADDRESS = 'npub1q7amuklx0fjw76dtulzzhhjmff8du5lyngw377d89hhrmj49w48ssltn7y';
-      }
-      if (!process.env.LINK_REPORT_BASE_URL) {
-        process.env.LINK_REPORT_BASE_URL = 'https://devoffaucet.unift.xyz';
-      }
-      if (!process.env.LINK_RGB_HOST) {
-        process.env.LINK_RGB_HOST = 'localhost';
-      }
-      if (!process.env.LINK_RGB_LDK_PEER_LISTENING_PORT) {
-        process.env.LINK_RGB_LDK_PEER_LISTENING_PORT = '9750';
-      }
-      
-      log.info('Nostr relay and peer configuration set:', {
-        nodePubkey: process.env.LINK_NOSTR_NODE_NPUBKEY,
-        nodeHost: process.env.LINK_NOSTR_NODE_HOST,
-        relayUri: process.env.LINK_NOSTR_RELAY_URI,
-        reportAddress: process.env.LINK_REPORT_ADDRESS,
-        reportBaseUrl: process.env.LINK_REPORT_BASE_URL
-      });
 
       // Create lnlink-server instance with configuration
       const config = {
         dataPath: dataPath,
-        network: process.env.LINK_NETWORK || 'regtest', // default to testnet
         httpPort: parseInt(this.port),
-        name: 'LN-Link-App', // Application name
-        enableTor: process.env.LINK_ENABLE_TOR !== 'false',
+        name: 'NodeFlow',
         owner: nostrService.getNpub(),
         binaryPath: pathManager.getBinaryPath(),
-        debug: !process.env.NODE_ENV || process.env.NODE_ENV !== 'production',
-        // 添加缺失的环境变量
-        reportBaseUrl: process.env.LINK_REPORT_BASE_URL || 'https://devoffaucet.unift.xyz',
-        reportAddress: process.env.LINK_REPORT_ADDRESS || 'npub1q7amuklx0fjw76dtulzzhhjmff8du5lyngw377d89hhrmj49w48ssltn7y',
-        rgbLdkPeerListeningPort: process.env.LINK_RGB_LDK_PEER_LISTENING_PORT || 9750,
-        rgbHost: process.env.LINK_RGB_HOST || 'localhost'
+        debug: false,
+        reportBaseUrl: 'https://devoffaucet.unift.xyz',
+        reportAddress: 'npub1q7amuklx0fjw76dtulzzhhjmff8du5lyngw377d89hhrmj49w48ssltn7y',
+        rgbLdkPeerListeningPort: 9750,
+        rgbHost: 'localhost'
       };
 
       log.info('Creating lnlink-server instance with config:', config);

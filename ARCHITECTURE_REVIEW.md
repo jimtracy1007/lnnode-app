@@ -132,7 +132,7 @@ module.exports = {
   nostr: {
     nodePubkey: '027d2f1be71dc24c60b15070489d4ef274dd6aac236d02c67c76d6935defba56a6',
     nodeHost: 'regtest.lnfi.network:9735',
-    relayUri: 'wss://relay01.lnfi.network',
+    relayUri: 'wss://relay.snort.social',
   },
   rgb: {
     host: 'localhost',

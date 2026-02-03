@@ -33,7 +33,7 @@ class WindowManager {
         icon: pathManager.getAppIcon(),
         titleBarStyle: 'default',
         show: false, // Don't show window until it's ready
-        title: 'LND NOSTR Link', // Set initial title
+        title: 'NodeFlow', // Set initial title
         backgroundColor: '#1e1e1e', // Set background color to avoid white screen
       });
 
@@ -159,7 +159,7 @@ class WindowManager {
       log.info('Application page started loading');
       // Keep title unchanged
       if (this.mainWindow) {
-        this.mainWindow.setTitle('Lnfi Network LN Node');
+        this.mainWindow.setTitle('NodeFlow');
       }
     });
     
@@ -168,7 +168,7 @@ class WindowManager {
       
       // Set correct title
       if (this.mainWindow) {
-        this.mainWindow.setTitle('Lnfi Network LN Node');
+        this.mainWindow.setTitle('NodeFlow');
         
         // Ensure page content is visible
         if (this.mainWindow.isMinimized()) {
