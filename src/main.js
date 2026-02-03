@@ -130,6 +130,23 @@ async function checkForRemainingProcesses() {
         processManager.setRgbNodeProcess(mockProcess);
       }
     }
+
+    // tor
+    if (!processManager.getTorProcess()) {
+      const tor = list.find(p => /\btor\b/.test(`${p.name} ${p.cmd || ''}`) && /9050/.test(p.cmd || ''));
+      if (tor && tor.pid) {
+        const mainPid = tor.pid;
+        log.info(`Found untracked tor process with PID: ${mainPid}, tracking it`);
+        const mockProcess = {
+          pid: mainPid,
+          kill: (signal) => {
+            try { process.kill(mainPid, signal); return true; } catch (e) { log.error(`Error killing tor process: ${e.message}`); return false; }
+          },
+          on: () => {}
+        };
+        processManager.setTorProcess(mockProcess);
+      }
+    }
   } catch (e) {
     log.error(`Failed to list processes: ${e.message}`);
   }
@@ -165,7 +182,7 @@ async function performCleanup() {
     try {
       const { default: psList } = await import('ps-list');
       const list = await psList();
-      const leftovers = list.filter(p => /rgb-lightning-node|\blitd\b/.test(`${p.name} ${p.cmd || ''}`));
+      const leftovers = list.filter(p => /rgb-lightning-node|\blitd\b|\btor\b/.test(`${p.name} ${p.cmd || ''}`));
       for (const p of leftovers) {
         try { process.kill(p.pid, 'SIGKILL'); } catch (_) {}
       }

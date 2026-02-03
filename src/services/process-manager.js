@@ -6,6 +6,7 @@ class ProcessManager {
     this.childProcesses = [];
     this.rgbNodeProcess = null;
     this.litdProcess = null;
+    this.torProcess = null;
     this.isShuttingDown = false;
     this.trackedPids = new Set(); // Track PIDs to avoid duplicates
   }
@@ -75,6 +76,22 @@ class ProcessManager {
   // Get litd process
   getLitdProcess() {
     return this.litdProcess;
+  }
+
+  // Set tor process
+  setTorProcess(process) {
+    if (this.torProcess && this.torProcess.pid === process.pid) {
+      log.info(`Tor process with PID ${process.pid} is already set`);
+      return process;
+    }
+    this.torProcess = process;
+    this.trackProcess(process);
+    return process;
+  }
+
+  // Get tor process
+  getTorProcess() {
+    return this.torProcess;
   }
 
   // Force kill process by name using system commands
@@ -149,6 +166,26 @@ class ProcessManager {
     this.forceKillProcessByName('litd');
   }
 
+  // Kill tor process
+  killTorProcess() {
+    if (this.torProcess) {
+      log.info('Closing Tor process');
+      if (this.isProcessAlive(this.torProcess.pid)) {
+        try {
+          this.torProcess.kill('SIGKILL');
+        } catch (e) {
+          log.error('Error killing Tor process:', e);
+        }
+      } else {
+        log.info('Tor process already dead');
+      }
+      this.torProcess = null;
+    }
+    
+    // Always try system-level kill for any remaining processes
+    this.forceKillProcessByName('tor');
+  }
+
   // Clean up dead processes from tracking
   cleanupDeadProcesses() {
     const aliveProcesses = this.childProcesses.filter(process => {
@@ -184,6 +221,9 @@ class ProcessManager {
     
     // Kill litd process
     this.killLitdProcess();
+    
+    // Kill tor process
+    this.killTorProcess();
     
     // Kill remaining tracked processes
     const processes = [...this.childProcesses]; // Copy to avoid modification during iteration

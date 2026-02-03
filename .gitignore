@@ -110,7 +110,16 @@ wallet.dat
 *.key
 *.pem 
 
-bin
+# Keep bin/ directory for embedded binaries
+# bin/
+
+# Only embed Tor binaries (too large: litd ~110MB, rgb-lightning-node ~60MB)
+# These will be downloaded on first install via fetch-binaries.js
+bin/**/litd
+bin/**/litd.exe
+bin/**/rgb-lightning-node
+bin/**/rgb-lightning-node.exe
+
 READLNLINK.md
 CLAUDE.md
 todo.md
