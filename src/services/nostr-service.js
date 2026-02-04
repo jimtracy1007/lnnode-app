@@ -11,7 +11,8 @@ class NostrService {
     
     // Default relay list
     this.defaultRelays = [
-      'wss://relay.snort.social'
+      'wss://relay.snort.social',
+      'wss://relay01.lnfi.network'
     ];
     
     log.info("Nostr service initialized with npub:", this.npub);
