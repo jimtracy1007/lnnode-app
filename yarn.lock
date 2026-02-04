@@ -3902,7 +3902,7 @@ lines-and-columns@^1.1.6:
   resolved "https://registry.yarnpkg.com/lines-and-columns/-/lines-and-columns-1.2.4.tgz#eca284f75d2965079309dc0ad9255abb2ebc1632"
   integrity sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==
 
-lnlink-server@^1.0.7:
+lnlink-server@1.0.7:
   version "1.0.7"
   resolved "https://registry.yarnpkg.com/lnlink-server/-/lnlink-server-1.0.7.tgz#ecb1225e9ce5f48b6240d1502594316adf3ff8a8"
   integrity sha512-l7QaRxS2vbDfBjf2tVYvO1ElvEhAU8fTI9Pdgvs+12DrheJQiUBMv6H5/0LX/X8VnaEJvAg4HCk9kc6cexg7mQ==
@@ -3928,6 +3928,46 @@ lnlink-server@^1.0.7:
     form-data "^4.0.2"
     http-errors "~1.6.3"
     jest "^29.6.2"
+    long "^5.2.3"
+    module-alias "^2.2.3"
+    morgan "~1.9.1"
+    node-cache "^5.1.2"
+    node-cron "^3.0.3"
+    nostr-tools "1.17.0"
+    pino "^9.9.0"
+    pino-pretty "^13.1.1"
+    pino-roll "^3.1.0"
+    prisma "^6.14.0"
+    typescript "^5.7.3"
+    ws "^8.18.0"
+
+lnlink-server@^1.0.8:
+  version "1.0.8"
+  resolved "https://registry.yarnpkg.com/lnlink-server/-/lnlink-server-1.0.8.tgz#95aeabd62d63006c0a0ddca870b48ca0bec42631"
+  integrity sha512-LLB7nmX/wbnaYyYys0ob62e+nU9LNmHP5r4GmcJAQ7kATUSsDg4Rf9U2MoSY/F7b6Bwq8iZCXNj3wM9zDKYWAg==
+  dependencies:
+    "@grpc/grpc-js" "^1.10.8"
+    "@grpc/proto-loader" "^0.7.9"
+    "@lightsparkdev/lightspark-sdk" "^1.8.9"
+    "@lnfi-network/rgb-api-js-sdk" "^1.0.7"
+    "@prisma/client" "6.14.0"
+    axios "^1.7.2"
+    bitcoin-core "^4.2.0"
+    body-parser "^1.20.2"
+    bolt11 "^1.4.1"
+    cookie-parser "~1.4.4"
+    crypto-js "^4.2.0"
+    dayjs "^1.11.10"
+    debug "~2.6.9"
+    decimal.js "^10.4.3"
+    ethers "^6.15.0"
+    express "^4.18.2"
+    express-rate-limit "^8.0.1"
+    find-process "^2.0.0"
+    form-data "^4.0.2"
+    http-errors "~1.6.3"
+    jest "^29.6.2"
+    lnlink-server "1.0.7"
     long "^5.2.3"
     module-alias "^2.2.3"
     morgan "~1.9.1"
