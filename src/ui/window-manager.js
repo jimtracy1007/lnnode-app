@@ -139,7 +139,8 @@ class WindowManager {
   async loadAppUrl() {
     if (!this.mainWindow) return;
     
-    const url = `http://127.0.0.1:${expressServer.getPort()}`;
+    const timestamp = Date.now();
+    const url = `http://127.0.0.1:${expressServer.getPort()}?v=${timestamp}`;
     log.info(`Loading application URL: ${url}`);
     
     try {
