@@ -28,7 +28,8 @@ class WindowManager {
           nodeIntegrationInSubFrames: true, // Allow preload script in subframes
           allowRunningInsecureContent: false,
           experimentalFeatures: false,
-          backgroundColor: '#1e1e1e'
+          backgroundColor: '#1e1e1e',
+          partition: 'persist:lnlink-app'
         },
         icon: pathManager.getAppIcon(),
         titleBarStyle: 'default',
@@ -138,12 +139,15 @@ class WindowManager {
   // Load application URL
   async loadAppUrl() {
     if (!this.mainWindow) return;
-    
-    const timestamp = Date.now();
-    const url = `http://127.0.0.1:${expressServer.getPort()}?v=${timestamp}`;
+
+    const url = `http://127.0.0.1:${expressServer.getPort()}`;
     log.info(`Loading application URL: ${url}`);
-    
+
     try {
+      // 只清除当前 partition 的 HTTP 缓存
+      await this.mainWindow.webContents.session.clearCache();
+      log.info('Partition cache cleared before loading URL');
+
       await this.mainWindow.loadURL(url);
     } catch (error) {
       log.error(`Failed to load application URL: ${error.message}`);
