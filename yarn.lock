@@ -3941,10 +3941,10 @@ lnlink-server@1.0.7:
     typescript "^5.7.3"
     ws "^8.18.0"
 
-lnlink-server@^1.0.8:
-  version "1.0.8"
-  resolved "https://registry.yarnpkg.com/lnlink-server/-/lnlink-server-1.0.8.tgz#95aeabd62d63006c0a0ddca870b48ca0bec42631"
-  integrity sha512-LLB7nmX/wbnaYyYys0ob62e+nU9LNmHP5r4GmcJAQ7kATUSsDg4Rf9U2MoSY/F7b6Bwq8iZCXNj3wM9zDKYWAg==
+lnlink-server@1.0.9:
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/lnlink-server/-/lnlink-server-1.0.9.tgz#266bf5e7bb163000530dd668024d251c6ff75591"
+  integrity sha512-cBB9aceuYK5IS46JLuD/uU8nPIDIvQ4A4ZR3sdrRVT+fL2VTjEZDGR/BuoqoZCSQ4OrERW3c2woMn1VGSkJVcQ==
   dependencies:
     "@grpc/grpc-js" "^1.10.8"
     "@grpc/proto-loader" "^0.7.9"
