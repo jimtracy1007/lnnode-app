@@ -367,17 +367,51 @@ jobs:
             dist/**/*.blockmap
             dist/build-info.json
 
-      - name: Read package version
+      - name: Read package version and commit info
         id: pkg-version
         run: |
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
           echo "version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+          COMMIT_SHA=$(git rev-parse HEAD)
+          echo "commit_sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
+          COMMIT_SHORT=$(git rev-parse --short HEAD)
+          echo "commit_short=$COMMIT_SHORT" >> $GITHUB_OUTPUT
+          COMMIT_MSG=$(git log -1 --pretty=format:'%s')
+          echo "commit_msg=$COMMIT_MSG" >> $GITHUB_OUTPUT
+          RECENT_COMMITS=$(git log --oneline -10)
+          echo "Recent commits:"
+          echo "$RECENT_COMMITS"
+
+      - name: Delete stale tag if exists
+        run: |
+          TAG="v${{ steps.pkg-version.outputs.version }}"
+          if git ls-remote --tags origin | grep -q "refs/tags/$TAG"; then
+            echo "Deleting stale tag $TAG..."
+            git push origin :refs/tags/$TAG || true
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate release body
+        id: release-body
+        run: |
+          BODY=$(git log --oneline -10 --pretty=format:'- %h %s')
+          # Use delimiter for multiline output
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "## Changes" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "$BODY" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "**Build:** ${{ steps.pkg-version.outputs.commit_short }} | **Branch:** ${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release and upload assets
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.pkg-version.outputs.version }}
+          target_commitish: ${{ steps.pkg-version.outputs.commit_sha }}
           name: Release v${{ steps.pkg-version.outputs.version }}
+          body: ${{ steps.release-body.outputs.body }}
           draft: false
           prerelease: false
           files: |
