@@ -1,4 +1,3 @@
-const { spawn } = require('child_process');
 const log = require('../utils/logger');
 
 class ProcessManager {
@@ -94,13 +93,9 @@ class ProcessManager {
     return this.torProcess;
   }
 
-  // Force kill process by name using system commands
+  // Force kill process by name using system commands (last-resort fallback)
   forceKillProcessByName(processName) {
-    if (this.isShuttingDown) {
-      return; // Avoid duplicate kills during shutdown
-    }
-    
-    log.info(`Force killing ${processName} process...`);
+    log.info(`Force killing ${processName} process (last-resort)...`);
     try {
       const { execSync } = require('child_process');
       
@@ -126,64 +121,40 @@ class ProcessManager {
     }
   }
 
+  // Gracefully kill a named service process (SIGTERM first, then SIGKILL)
+  killServiceProcess(name, processRef) {
+    if (!processRef) {
+      log.info(`${name} process not tracked, skipping`);
+      return;
+    }
+    if (!this.isProcessAlive(processRef.pid)) {
+      log.info(`${name} process (PID ${processRef.pid}) already dead`);
+      return;
+    }
+    log.info(`Stopping ${name} process (PID ${processRef.pid}) with SIGTERM...`);
+    try {
+      processRef.kill('SIGTERM');
+    } catch (e) {
+      log.error(`Error sending SIGTERM to ${name} process:`, e);
+    }
+  }
+
   // Kill RGB node process
   killRgbNodeProcess() {
-    if (this.rgbNodeProcess) {
-      log.info('Closing RGB Node process');
-      if (this.isProcessAlive(this.rgbNodeProcess.pid)) {
-        try {
-          this.rgbNodeProcess.kill('SIGKILL');
-        } catch (e) {
-          log.error('Error killing RGB Node process:', e);
-        }
-      } else {
-        log.info('RGB Node process already dead');
-      }
-      this.rgbNodeProcess = null;
-    }
-    
-    // Always try system-level kill for any remaining processes
-    this.forceKillProcessByName('rgb-lightning-node');
+    this.killServiceProcess('RGB', this.rgbNodeProcess);
+    this.rgbNodeProcess = null;
   }
 
   // Kill litd process
   killLitdProcess() {
-    if (this.litdProcess) {
-      log.info('Closing litd process');
-      if (this.isProcessAlive(this.litdProcess.pid)) {
-        try {
-          this.litdProcess.kill('SIGKILL');
-        } catch (e) {
-          log.error('Error killing litd process:', e);
-        }
-      } else {
-        log.info('Litd process already dead');
-      }
-      this.litdProcess = null;
-    }
-    
-    // Always try system-level kill for any remaining processes
-    this.forceKillProcessByName('litd');
+    this.killServiceProcess('litd', this.litdProcess);
+    this.litdProcess = null;
   }
 
   // Kill tor process
   killTorProcess() {
-    if (this.torProcess) {
-      log.info('Closing Tor process');
-      if (this.isProcessAlive(this.torProcess.pid)) {
-        try {
-          this.torProcess.kill('SIGKILL');
-        } catch (e) {
-          log.error('Error killing Tor process:', e);
-        }
-      } else {
-        log.info('Tor process already dead');
-      }
-      this.torProcess = null;
-    }
-    
-    // Always try system-level kill for any remaining processes
-    this.forceKillProcessByName('tor');
+    this.killServiceProcess('Tor', this.torProcess);
+    this.torProcess = null;
   }
 
   // Clean up dead processes from tracking
@@ -202,7 +173,7 @@ class ProcessManager {
     this.childProcesses = aliveProcesses;
   }
 
-  // Force terminate all child processes
+  // Terminate all child processes (SIGTERM → wait → SIGKILL fallback)
   killAllProcesses() {
     if (this.isShuttingDown) {
       log.info('Already shutting down, skipping duplicate kill request');
@@ -214,27 +185,22 @@ class ProcessManager {
     // Clean up dead processes first
     this.cleanupDeadProcesses();
     
-    log.info(`Attempting to kill ${this.childProcesses.length} child processes`);
+    log.info(`Attempting to stop ${this.childProcesses.length} child processes`);
     
-    // Kill RGB node process first
+    // Graceful SIGTERM phase (ln-link's lnLink.stop() should have handled this already)
     this.killRgbNodeProcess();
-    
-    // Kill litd process
     this.killLitdProcess();
-    
-    // Kill tor process
     this.killTorProcess();
     
-    // Kill remaining tracked processes
-    const processes = [...this.childProcesses]; // Copy to avoid modification during iteration
-    
-    processes.forEach(process => {
-      if (process && process.pid && this.isProcessAlive(process.pid)) {
+    // SIGTERM remaining tracked processes
+    const processes = [...this.childProcesses];
+    processes.forEach(p => {
+      if (p && p.pid && this.isProcessAlive(p.pid)) {
         try {
-          log.info(`Killing process with PID: ${process.pid}`);
-          process.kill('SIGKILL');
+          log.info(`Sending SIGTERM to process PID: ${p.pid}`);
+          p.kill('SIGTERM');
         } catch (e) {
-          log.error(`Error killing process ${process.pid}:`, e);
+          log.error(`Error sending SIGTERM to process ${p.pid}:`, e);
         }
       }
     });
@@ -243,10 +209,13 @@ class ProcessManager {
     this.childProcesses = [];
     this.trackedPids.clear();
     
-    // Reset shutdown flag after a delay
+    // Last-resort: force kill by name after a delay if any remain
     setTimeout(() => {
+      this.forceKillProcessByName('rgb-lightning-node');
+      this.forceKillProcessByName('litd');
+      this.forceKillProcessByName('tor');
       this.isShuttingDown = false;
-    }, 2000);
+    }, 3000);
   }
 }
 

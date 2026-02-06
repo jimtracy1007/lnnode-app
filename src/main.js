@@ -18,7 +18,6 @@ const windowManager = require('./ui/window-manager');
 const { registerNostrHandlers } = require('./ipc/nostr-handlers');
 
 let isShuttingDown = false;
-let processCheckInterval = null;
 
 // Register additional IPC handlers
 function registerServerHandlers() {
@@ -162,35 +161,14 @@ async function performCleanup() {
   isShuttingDown = true;
   log.info('Performing application cleanup...');
 
-  // Stop process checking interval
-  if (processCheckInterval) {
-    clearInterval(processCheckInterval);
-    processCheckInterval = null;
-  }
-
   // Check for any remaining processes before cleanup
-  checkForRemainingProcesses();
+  await checkForRemainingProcesses();
 
-  // Stop Express server
+  // Stop Express server (lnLink.stop() will gracefully stop child processes)
   await expressServer.stop();
 
-  // Terminate all child processes
+  // Fallback: terminate any remaining child processes
   processManager.killAllProcesses();
-
-  // Final verification after cleanup (cross-platform best effort)
-  setTimeout(async () => {
-    try {
-      const { default: psList } = await import('ps-list');
-      const list = await psList();
-      const leftovers = list.filter(p => /rgb-lightning-node|\blitd\b|\btor\b/.test(`${p.name} ${p.cmd || ''}`));
-      for (const p of leftovers) {
-        try { process.kill(p.pid, 'SIGKILL'); } catch (_) {}
-      }
-      log.info('Final cleanup verification completed');
-    } catch (err) {
-      log.error('Error in final cleanup verification:', err);
-    }
-  }, 2000);
 }
 
 // Main application initialization
@@ -206,9 +184,6 @@ async function initApp() {
 
     // Register additional IPC handlers
     registerServerHandlers();
-
-    // Start periodic process checking (less frequent)
-    processCheckInterval = setInterval(checkForRemainingProcesses, 10000); // Every 10 seconds
 
     // Start Express server
     try {
