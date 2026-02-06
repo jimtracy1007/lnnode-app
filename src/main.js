@@ -24,6 +24,7 @@ function registerServerHandlers() {
   // Remove existing handlers first (for development mode)
   ipcMain.removeHandler('restart-server');
   ipcMain.removeHandler('get-server-status');
+  ipcMain.removeHandler('navigate-to-welcome');
   
   // Restart server handler
   ipcMain.handle('restart-server', async () => {
@@ -63,6 +64,23 @@ function registerServerHandlers() {
   // Get app version
   ipcMain.handle('get-app-version', async () => {
     return app.getVersion();
+  });
+
+  // Navigate back to the local welcome page (bridge for external sites like devoflnnode.unift.xyz)
+  ipcMain.handle('navigate-to-welcome', async () => {
+    try {
+      const mainWindow = windowManager.getMainWindow();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        const url = `http://127.0.0.1:${expressServer.getPort()}`;
+        log.info(`Navigating back to welcome page: ${url}`);
+        await mainWindow.loadURL(url);
+        return { success: true };
+      }
+      return { success: false, message: 'Main window not available' };
+    } catch (error) {
+      log.error('Failed to navigate to welcome:', error);
+      return { success: false, message: error.message };
+    }
   });
 
   // Open external URL in default browser

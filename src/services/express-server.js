@@ -14,8 +14,6 @@ class ExpressServer {
     this.lnLink = null;
     this.serverReady = false;
     this.port = '8091';
-    this.litdTracked = false;
-    this.rgbTracked = false;
   }
 
   getPort() {
@@ -61,61 +59,6 @@ class ExpressServer {
     }
 
     throw new Error(`No available port found starting from ${basePort}`);
-  }
-
-  // Check for and track processes by name (cross-platform)
-  async checkAndTrackProcess(processName, trackFunction) {
-    // Double check if already tracked (safety measure)
-    if (processName === 'litd' && this.litdTracked) {
-      log.debug(`${processName} already tracked, skipping check`);
-      return;
-    }
-    if (processName === 'rgb-lightning-node' && this.rgbTracked) {
-      log.debug(`${processName} already tracked, skipping check`);
-      return;
-    }
-
-    log.debug(`Searching for ${processName} process...`);
-    try {
-      const { default: psList } = await import('ps-list');
-      const list = await psList();
-      const match = list.find((p) => {
-        const cmd = `${p.name} ${p.cmd || ''}`;
-        if (processName === 'litd') {
-          return /\blitd\b/.test(cmd) && /--disableui/.test(cmd);
-        }
-        if (processName === 'rgb-lightning-node') {
-          return /rgb-lightning-node/.test(cmd) && /--daemon-listening-port/.test(cmd);
-        }
-        return cmd.includes(processName);
-      });
-
-      if (match && match.pid) {
-        const mainPid = match.pid;
-        log.info(`Found ${processName} process with PID: ${mainPid}`);
-        const mockProcess = {
-          pid: mainPid,
-          kill: (signal) => {
-            try {
-              process.kill(mainPid, signal);
-              return true;
-            } catch (e) {
-              log.error(`Error killing ${processName} process: ${e.message}`);
-              return false;
-            }
-          },
-          on: () => {}
-        };
-        trackFunction(mockProcess);
-        log.info(`${processName} process successfully tracked and registered`);
-      } else {
-        log.warn(`No ${processName} process found - it may not have started yet`);
-        if (processName === 'litd') this.litdTracked = false;
-        if (processName === 'rgb-lightning-node') this.rgbTracked = false;
-      }
-    } catch (e) {
-      log.error(`Failed to list processes: ${e.message}`);
-    }
   }
 
   // Start Express server
@@ -208,9 +151,6 @@ class ExpressServer {
       this.serverReady = false;
     }
 
-    // Reset tracking flags
-    this.litdTracked = false;
-    this.rgbTracked = false;
   }
 
   // Check if server is running

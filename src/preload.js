@@ -23,6 +23,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Open external URL in default browser
     openExternal: (url) => ipcRenderer.invoke('open-external', url),
     
+    // Navigate back to the local welcome page (for external sites like devoflnnode.unift.xyz)
+    navigateToWelcome: () => ipcRenderer.invoke('navigate-to-welcome'),
+    
     // Remove listeners
     removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel)
 });

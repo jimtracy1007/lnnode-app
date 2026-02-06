@@ -100,7 +100,7 @@ class ProcessManager {
       const { execSync } = require('child_process');
       
       if (process.platform === 'darwin' || process.platform === 'linux') {
-        execSync(`pkill -9 -f "${processName}" || true`);
+        execSync(`pkill -9 -x "${processName}" || true`);
         log.info(`Killed ${processName} process with pkill -9`);
       } else if (process.platform === 'win32') {
         execSync(`taskkill /F /IM ${processName}.exe /T 2>nul || exit 0`);
