@@ -8,6 +8,7 @@ class ProcessManager {
     this.torProcess = null;
     this.isShuttingDown = false;
     this.trackedPids = new Set(); // Track PIDs to avoid duplicates
+    this.servicePids = { litd: null, tor: null, rgb: null }; // PIDs reported by ln-link
   }
 
   // Track a child process (prevent duplicates)
@@ -209,13 +210,62 @@ class ProcessManager {
     this.childProcesses = [];
     this.trackedPids.clear();
     
-    // Last-resort: force kill by name after a delay if any remain
+    // Last-resort: force kill after a delay if any remain
     setTimeout(() => {
+      // First try PID-based kill (reliable)
+      const { litd, tor, rgb } = this.servicePids;
+      this.forceKillByPid(litd, 'litd');
+      this.forceKillByPid(rgb, 'rgb');
+      this.forceKillByPid(tor, 'tor');
+
+      // Then fallback to name-based kill
       this.forceKillProcessByName('rgb-lightning-node');
       this.forceKillProcessByName('litd');
       this.forceKillProcessByName('tor');
       this.isShuttingDown = false;
     }, 3000);
+  }
+
+  // Store PIDs reported by ln-link's processManager
+  snapshotServicePids(pids) {
+    if (pids) {
+      this.servicePids = { ...this.servicePids, ...pids };
+      log.info(`Snapshotted service PIDs: litd=${pids.litd}, tor=${pids.tor}, rgb=${pids.rgb}`);
+    }
+  }
+
+  // Get snapshotted service PIDs
+  getServicePids() {
+    return { ...this.servicePids };
+  }
+
+  // Kill a process by PID with SIGKILL (synchronous, safe for exit handler)
+  forceKillByPid(pid, name) {
+    if (!pid) return;
+    try {
+      process.kill(pid, 'SIGKILL');
+      log.info(`Force killed ${name} (PID ${pid}) with SIGKILL`);
+    } catch (e) {
+      // ESRCH = process already gone, not an error
+      if (e.code !== 'ESRCH') {
+        log.error(`Error force killing ${name} PID ${pid}:`, e.message);
+      }
+    }
+  }
+
+  // Synchronous last-resort cleanup for process.on('exit') handler.
+  // Only synchronous code can run in 'exit' handlers, so we use execSync directly.
+  forceKillAllSync() {
+    // Primary: kill by PID (reliable, cross-platform, no name-truncation issues)
+    const { litd, tor, rgb } = this.servicePids;
+    this.forceKillByPid(litd, 'litd');
+    this.forceKillByPid(rgb, 'rgb');
+    this.forceKillByPid(tor, 'tor');
+
+    // Fallback: kill by name in case PIDs were stale or not snapshotted
+    this.forceKillProcessByName('litd');
+    this.forceKillProcessByName('rgb-lightning-node');
+    this.forceKillProcessByName('tor');
   }
 }
 

@@ -18,6 +18,7 @@ const windowManager = require('./ui/window-manager');
 const { registerNostrHandlers } = require('./ipc/nostr-handlers');
 
 let isShuttingDown = false;
+let exitAllowed = false; // Only true after cleanup completes — prevents premature quit
 
 // Register additional IPC handlers
 function registerServerHandlers() {
@@ -179,13 +180,28 @@ async function performCleanup() {
   isShuttingDown = true;
   log.info('Performing application cleanup...');
 
+  // Snapshot fresh PIDs from ln-link BEFORE stopping — ensures forceKillAllSync
+  // has valid PIDs even if lnLink.stop() hangs on server.close().
+  processManager.snapshotServicePids(expressServer.getServicePids());
+
   // Check for any remaining processes before cleanup
   await checkForRemainingProcesses();
 
   // Stop Express server (lnLink.stop() will gracefully stop child processes)
-  await expressServer.stop();
+  // Timeout prevents hanging if server.close() blocks on active connections.
+  try {
+    const stopTimeout = new Promise(resolve => setTimeout(() => {
+      log.warn('expressServer.stop() timed out after 8s, continuing cleanup...');
+      resolve();
+    }, 8000));
+    await Promise.race([expressServer.stop(), stopTimeout]);
+  } catch (e) {
+    log.error('expressServer.stop() failed:', e);
+  }
 
-  // Fallback: terminate any remaining child processes
+  // Fallback: kill any remaining child processes that lnLink.stop() missed.
+  // Child processes are spawned with detached:true, so they survive parent exit.
+  // This ensures litd/rgb/tor are cleaned up even if lnLink.stop() times out.
   processManager.killAllProcesses();
 }
 
@@ -208,6 +224,9 @@ async function initApp() {
       log.info('Starting Express server...');
       await expressServer.start();
       log.info('Express server started successfully');
+
+      // Snapshot child process PIDs from ln-link so we can kill them on exit
+      processManager.snapshotServicePids(expressServer.getServicePids());
 
       // Load the application URL
       await windowManager.loadAppUrl();
@@ -237,44 +256,89 @@ app.whenReady().then(initApp).catch(err => {
 // Quit the application when all windows are closed
 app.on('window-all-closed', async () => {
   log.info('All windows closed');
-  await performCleanup();
 
   if (process.platform !== 'darwin') {
-    app.quit();
+    // On non-macOS platforms, clean up and quit
+    await performCleanup();
+    // Give killAllProcesses's setTimeout(3000) time to fire
+    setTimeout(() => {
+      exitAllowed = true;
+      app.exit(0);
+    }, 3500);
   }
+  // On macOS (darwin), the app stays in the dock. Do NOT run cleanup here
+  // so that re-activating from the dock can restart services normally.
 });
 
 // Re-create window on macOS when dock icon is clicked
 app.on('activate', () => {
   if (!windowManager.isWindowActive()) {
+    // Reset shutdown flags so re-activation from dock can restart services
+    isShuttingDown = false;
+    exitAllowed = false;
     initApp();
   }
 });
 
-// Add before-quit event handler
+// Handle SIGHUP (terminal closed) — without this, the process dies immediately
+// and process.on('exit') does NOT fire, leaving child processes orphaned.
+process.on('SIGHUP', () => {
+  log.info('Received SIGHUP (terminal closed), force killing child processes...');
+  processManager.forceKillAllSync();
+  process.exit(0);
+});
+
+// Handle SIGINT (Ctrl+C in terminal / yarn dev) — intercept before Node.js default exit
+process.on('SIGINT', async () => {
+  log.info('Received SIGINT, performing cleanup before exit...');
+  try {
+    await performCleanup();
+  } catch (e) {
+    log.error('Cleanup on SIGINT failed:', e);
+  }
+  // Give killAllProcesses's setTimeout(3000) time to fire
+  setTimeout(() => {
+    exitAllowed = true;
+    app.exit(0);
+  }, 3500);
+});
+
+// Add before-quit event handler (graceful quit via menu / Cmd+Q)
+// CRITICAL: Always preventDefault() unless exitAllowed is true.
+// Without this, SIGINT handler sets isShuttingDown=true, then Electron's
+// internal SIGINT handling triggers before-quit which would allow quit
+// before async cleanup completes.
 app.on('before-quit', async (event) => {
-  if (isShuttingDown) {
-    log.info('Already shutting down, allowing quit to proceed');
+  if (exitAllowed) {
+    log.info('Exit allowed, proceeding with quit');
     return;
   }
 
-  log.info('Application is about to quit');
+  // Always block quit until cleanup is done
   event.preventDefault();
+
+  if (isShuttingDown) {
+    // Cleanup already in progress (e.g. from SIGINT handler), just block the quit
+    log.info('Cleanup in progress, preventing premature quit');
+    return;
+  }
+
+  log.info('Application is about to quit, starting cleanup...');
 
   // Perform cleanup
   await performCleanup();
 
-  // Allow time for cleanup then exit
+  // Allow time for killAllProcesses's setTimeout(3000) fallback
   setTimeout(() => {
     log.info('Cleanup completed, now exiting application');
+    exitAllowed = true;
     app.exit(0);
-  }, 3000); // Give more time for final verification
+  }, 3500);
 });
 
-// Ensure server process is closed when the app exits
-app.on('quit', async () => {
-  log.info('Application is quitting');
-  if (!isShuttingDown) {
-    await performCleanup();
-  }
+// Absolute last-resort: synchronous force kill on process exit.
+// This runs even if async cleanup was interrupted or incomplete.
+// process.on('exit') only allows synchronous code — forceKillAllSync uses execSync.
+process.on('exit', () => {
+  processManager.forceKillAllSync();
 });

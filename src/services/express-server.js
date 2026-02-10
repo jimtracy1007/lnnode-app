@@ -125,10 +125,18 @@ class ExpressServer {
 
       // Start lnlink-server service
       log.info('Starting lnlink-server service...');
-      await this.lnLink.start();
+      const result = await this.lnLink.start();
+
+      // Sync port: the backend's assignAvailablePorts() in getConfig may have
+      // reassigned the port if the original was taken between our probe and bind.
+      // Always use the actual listening port from the backend to avoid UI mismatch.
+      if (result?.port && result.port.toString() !== this.port) {
+        log.warn(`Port changed by backend: ${this.port} -> ${result.port} (syncing)`);
+        this.port = result.port.toString();
+      }
 
       this.serverReady = true;
-      log.info('lnlink-server started successfully');
+      log.info(`lnlink-server started successfully on port ${this.port}`);
 
       return true;
     } catch (error) {
@@ -151,6 +159,18 @@ class ExpressServer {
       this.serverReady = false;
     }
 
+  }
+
+  // Get PIDs of all managed child processes from lnlink-server
+  getServicePids() {
+    if (this.lnLink) {
+      try {
+        return this.lnLink.getServicePids();
+      } catch (e) {
+        log.error('Failed to get service PIDs:', e);
+      }
+    }
+    return { litd: null, tor: null, rgb: null };
   }
 
   // Check if server is running
