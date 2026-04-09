@@ -96,6 +96,16 @@ class ExpressServer {
         log.info(`Using existing user DB at: ${userDbPath}`);
       }
 
+      // Apply any pending Prisma migrations to the user DB. This handles upgrades
+      // where the bundled schema has new tables/columns but the user's existing
+      // sqlite file was created against an older schema. No-op on fresh installs.
+      try {
+        const dbMigrator = require('./db-migrator');
+        await dbMigrator.runMigrateDeploy(userDbPath);
+      } catch (e) {
+        log.error(`DB migration step threw but continuing: ${e.message}`);
+      }
+
       // Ensure LINK_DATABASE_URL is set for lnlink-server initialization
       process.env.LINK_DATABASE_URL = `file:${userDbPath}`;
       log.info(`Set LINK_DATABASE_URL: ${process.env.LINK_DATABASE_URL}`);
