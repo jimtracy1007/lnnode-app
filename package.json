@@ -77,8 +77,7 @@
     "asar": true,
     "asarUnpack": [
       "node_modules/.prisma/client/**",
-      "node_modules/prisma/**",
-      "node_modules/@prisma/engines/**",
+      "node_modules/@prisma/client/**",
       "node_modules/lnlink-server/prisma/**",
       "bin/**"
     ],
