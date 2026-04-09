@@ -31,23 +31,28 @@ const pathManager = require('../utils/path-manager');
 const VERSION_STAMP_FILE = '.rgb_node_version';
 
 /**
- * Read the bundled binaries.json. In dev it sits at the project root; in
- * the packaged app it's at the root of app.asar (because package.json
- * files config includes `"binaries.json"`).
+ * Read the bundled binaries.json. Uses __dirname-relative resolution so it
+ * works identically in dev (`<project>/binaries.json`) and in the packaged
+ * app (`<resources>/app.asar/binaries.json`, because package.json files
+ * config includes `"binaries.json"`).
  */
 function readBinariesJson() {
+  // src/services/rgb-version-checker.js -> ../../binaries.json
   const candidates = [
+    path.join(__dirname, '..', '..', 'binaries.json'),
     path.join(app.getAppPath(), 'binaries.json'),
   ];
   for (const candidate of candidates) {
     try {
       if (fs.existsSync(candidate)) {
+        log.info(`[rgb-version] reading binaries.json from: ${candidate}`);
         return JSON.parse(fs.readFileSync(candidate, 'utf-8'));
       }
     } catch (e) {
       log.warn(`[rgb-version] failed to parse ${candidate}: ${e.message}`);
     }
   }
+  log.warn(`[rgb-version] binaries.json not found at any candidate path`);
   return null;
 }
 
@@ -156,22 +161,23 @@ async function checkAndMaybeReset() {
   const rgbDir = path.join(pathManager.getDataPath(), '.rgb');
   const dialogOptions = {
     type: 'warning',
-    buttons: ['重置 RGB 节点数据', '退出应用'],
+    buttons: ['Reset RGB Node Data', 'Quit'],
     defaultId: 1,
     cancelId: 1,
     noLink: true,
-    title: 'RGB 节点版本不兼容',
-    message: `RGB 节点从 ${stored ?? '未知版本'} 升级到 ${expected}`,
+    title: 'RGB Node Version Incompatible',
+    message: `RGB node upgraded from ${stored ?? 'unknown'} to ${expected}`,
     detail:
-      '新版 RGB 节点可能无法读取旧版数据，继续运行可能导致节点崩溃或数据损坏。\n\n' +
-      '选择「重置 RGB 节点数据」将清空以下内容:\n' +
-      '  • 钱包助记词和派生密钥\n' +
-      '  • 已建立的 Lightning 通道和 LDK monitor\n' +
-      '  • 已 issue 的 RGB 资产和 rgb_lib_db\n' +
-      '  • BDK 链上钱包数据\n\n' +
-      '⚠️ 请先手动备份:\n' +
+      'The new RGB node binary may not be able to read the existing data. ' +
+      'Continuing as-is can crash the node or corrupt state.\n\n' +
+      '"Reset RGB Node Data" will permanently delete:\n' +
+      '  • Wallet mnemonic and derived keys\n' +
+      '  • All existing Lightning channels and LDK monitors\n' +
+      '  • All issued RGB assets and rgb_lib_db\n' +
+      '  • BDK on-chain wallet state\n\n' +
+      '⚠️ Back up this directory first if you need the data:\n' +
       rgbDir + '\n\n' +
-      '如果取消（或关闭此窗口）应用将退出，方便你手动处理。',
+      'Choose "Quit" to exit without changes so you can handle it manually.',
   };
 
   let response;
