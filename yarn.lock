@@ -168,14 +168,6 @@
     ws "^8.12.1"
     zen-observable-ts "^1.1.0"
 
-"@lnfi-network/rgb-api-js-sdk@^1.0.7":
-  version "1.0.7"
-  resolved "https://registry.yarnpkg.com/@lnfi-network/rgb-api-js-sdk/-/rgb-api-js-sdk-1.0.7.tgz#009514efa87b5bcc5bfda3fa8fd7120b2b9390c6"
-  integrity sha512-XQRv6ojEkG4qQfBDD4ojTMmaUU33T2BGtILLdPX9wQrJExdsnUa9PH3MwA8CWs3Jiy5EdY4fzAePNu+dIgI0bQ==
-  dependencies:
-    axios "^1.9.0"
-    bech32 "^2.0.0"
-
 "@malept/cross-spawn-promise@^1.1.0":
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@malept/cross-spawn-promise/-/cross-spawn-promise-1.1.1.tgz#504af200af6b98e198bce768bc1730c6936ae01d"
@@ -2305,15 +2297,14 @@ lazy-val@^1.0.4, lazy-val@^1.0.5:
   resolved "https://registry.yarnpkg.com/lazy-val/-/lazy-val-1.0.5.tgz#6cf3b9f5bc31cee7ee3e369c0832b7583dcd923d"
   integrity sha512-0/BnGCCfyUMkBpeDgWihanIAF9JmZhHBgUhEqzvf+adhNGLoP6TaiI5oF8oyb3I45P+PcnrqihSf01M0l0G5+Q==
 
-lnlink-server@^1.1.7:
-  version "1.1.7"
-  resolved "https://registry.yarnpkg.com/lnlink-server/-/lnlink-server-1.1.7.tgz#d1f1047e1bc0f8b2c95e2b39d7f6b3e55c8a9e4e"
-  integrity sha512-8003Dfd1YbAuQlKg+jzevrEi6jfFJ6Pt4i+Pu4WGCtAbN37sPkxRgldetAYSDJYCPoBHH6JhzWlQZdXWrKeO1g==
+lnlink-server@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/lnlink-server/-/lnlink-server-1.2.0.tgz#daea34a6ff59dc7aecc7fe1a4c03bf41e516e1f7"
+  integrity sha512-vMDsKB6T3zzeHKy8iBf8/pgADF98Zk/DOKBnXDjbBKFCT2880iqQxdydC0AvQKCGaF3bhxu03swPga+lW7eEqQ==
   dependencies:
     "@grpc/grpc-js" "^1.10.8"
     "@grpc/proto-loader" "^0.7.9"
     "@lightsparkdev/lightspark-sdk" "^1.8.9"
-    "@lnfi-network/rgb-api-js-sdk" "^1.0.7"
     "@prisma/client" "6.14.0"
     axios "^1.7.2"
     body-parser "^1.20.2"
@@ -2339,6 +2330,7 @@ lnlink-server@^1.1.7:
     pino-pretty "^13.1.1"
     pino-roll "^3.1.0"
     prisma "6.14.0"
+    rgb-api-js-sdk "^1.0.9"
     ws "^8.18.0"
 
 locate-path@^3.0.0:
@@ -3057,6 +3049,14 @@ retry@^0.12.0:
   version "0.12.0"
   resolved "https://registry.yarnpkg.com/retry/-/retry-0.12.0.tgz#1b42a6266a21f07421d1b0b54b7dc167b01c013b"
   integrity sha512-9LkiTwjUh6rT555DtE9rTX+BKByPfrMzEAtnlEtdEwr3Nkffwiihqe2bWADg+OQRjt9gl6ICdmB/ZFDCGAtSow==
+
+rgb-api-js-sdk@^1.0.9:
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/rgb-api-js-sdk/-/rgb-api-js-sdk-1.0.9.tgz#ccafa69774ad3dea575aca1e0d6e41d4fac2f95b"
+  integrity sha512-h73ALxQDSIMfcNtpJeKJbHmWehDlKPdphGWvz/gsy2qYpHRNE4Bex2nAgsKoRDsh95pQl/KvRWRUwtAwoJvsEw==
+  dependencies:
+    axios "^1.9.0"
+    bech32 "^2.0.0"
 
 ripemd160@^2.0.1:
   version "2.0.3"

@@ -3,17 +3,17 @@
     "tor": "https://archive.torproject.org/tor-package-archive/torbrowser/14.5.4/tor-expert-bundle-macos-aarch64-14.5.4.tar.gz",
     "libevent-2.1.7.dylib": "https://archive.torproject.org/tor-package-archive/torbrowser/14.5.4/tor-expert-bundle-macos-aarch64-14.5.4.tar.gz",
     "litd": "https://github.com/lightninglabs/lightning-terminal/releases/download/v0.16.0-alpha/lightning-terminal-darwin-arm64-v0.16.0-alpha.tar.gz",
-    "rgb-lightning-node": "https://github.com/lnfi-network-dev/rgb-lightning-node/releases/download/v0.2.1-rc.3/macos-latest-binaries.zip"
+    "rgb-lightning-node": "https://github.com/lnfi-network-dev/rgb-lightning-node/releases/download/v0.2.1-rc.6/macos-latest-binaries.zip"
   },
   "darwin-x64": {
     "tor": "https://archive.torproject.org/tor-package-archive/torbrowser/14.5.4/tor-expert-bundle-macos-x86_64-14.5.4.tar.gz",
     "libevent-2.1.7.dylib": "https://archive.torproject.org/tor-package-archive/torbrowser/14.5.4/tor-expert-bundle-macos-x86_64-14.5.4.tar.gz",
     "litd": "https://github.com/lightninglabs/lightning-terminal/releases/download/v0.16.0-alpha/lightning-terminal-darwin-amd64-v0.16.0-alpha.tar.gz",
-    "rgb-lightning-node": "https://github.com/lnfi-network-dev/rgb-lightning-node/releases/download/v0.2.1-rc.3/macos-latest-binaries.zip"
+    "rgb-lightning-node": "https://github.com/lnfi-network-dev/rgb-lightning-node/releases/download/v0.2.1-rc.6/macos-latest-binaries.zip"
   },
   "win32-x64": {
     "tor.exe": "https://archive.torproject.org/tor-package-archive/torbrowser/14.5.4/tor-expert-bundle-windows-x86_64-14.5.4.tar.gz",
     "litd.exe": "https://github.com/lightninglabs/lightning-terminal/releases/download/v0.16.0-alpha/lightning-terminal-windows-amd64-v0.16.0-alpha.zip",
-    "rgb-lightning-node.exe": "https://github.com/lnfi-network-dev/rgb-lightning-node/releases/download/v0.2.1-rc.3/windows-latest-binaries.zip"
+    "rgb-lightning-node.exe": "https://github.com/lnfi-network-dev/rgb-lightning-node/releases/download/v0.2.1-rc.6/windows-latest-binaries.zip"
   }
 }
