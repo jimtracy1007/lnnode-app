@@ -55,6 +55,7 @@
     "files": [
       "src/**/*",
       "assets/**/*",
+      "binaries.json",
       ".env",
       {
         "from": "node_modules/.prisma",

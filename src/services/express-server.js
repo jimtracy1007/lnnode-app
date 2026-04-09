@@ -71,6 +71,22 @@ class ExpressServer {
 
       log.info(`Using port ${this.port} for lnlink-server`);
 
+      // RGB node version compatibility check. Must run BEFORE any lnlink-server
+      // code spawns rgb-lightning-node, so that a binary version mismatch can
+      // prompt the user to reset .rgb/ before stale state corrupts the DB.
+      try {
+        const rgbVersionChecker = require('./rgb-version-checker');
+        const result = await rgbVersionChecker.checkAndMaybeReset();
+        if (result.action === 'reset') {
+          log.warn('RGB node data was reset due to version mismatch');
+        } else if (result.action === 'exit') {
+          log.warn('User exited due to RGB version mismatch; aborting start');
+          return false;
+        }
+      } catch (e) {
+        log.error(`RGB version check threw, continuing anyway: ${e.message}`);
+      }
+
       // Plan A: ensure user database exists by copying from template at first run
       const dataPath = pathManager.getDataPath();
       const userDbDir = path.join(dataPath, '.link');
