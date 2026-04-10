@@ -1,5 +1,6 @@
-const { BrowserWindow } = require('electron');
+const { BrowserWindow, dialog, nativeImage } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const log = require('../utils/logger');
 const pathManager = require('../utils/path-manager');
 const expressServer = require('../services/express-server');
@@ -7,6 +8,16 @@ const expressServer = require('../services/express-server');
 class WindowManager {
   constructor() {
     this.mainWindow = null;
+    // "User has approved quit" — set to true once the close-confirmation
+    // dialog returns Yes, or implicitly when quit was initiated via some
+    // other code path (Cmd+Q, menu Quit, SIGINT, uncaughtException). The
+    // close event handler uses this as an idempotency flag so that the
+    // second close(), triggered from inside the confirm handler, passes
+    // through without re-prompting.
+    this.quitApproved = false;
+    // Prevent two overlapping confirm dialogs if the user somehow triggers
+    // close twice in quick succession.
+    this._confirmInFlight = false;
   }
 
   // Create the main application window
@@ -27,12 +38,13 @@ class WindowManager {
           nodeIntegrationInSubFrames: true, // Allow preload script in subframes
           allowRunningInsecureContent: false,
           experimentalFeatures: false,
-          backgroundColor: '#1e1e1e'
+          backgroundColor: '#1e1e1e',
+          partition: 'persist:lnlink-app'
         },
         icon: pathManager.getAppIcon(),
         titleBarStyle: 'default',
         show: false, // Don't show window until it's ready
-        title: 'LND NOSTR Link', // Set initial title
+        title: 'NodeFlow', // Set initial title
         backgroundColor: '#1e1e1e', // Set background color to avoid white screen
       });
 
@@ -72,91 +84,20 @@ class WindowManager {
     }
   }
 
+  // Load HTML template from file
+  _loadTemplate(templateName) {
+    const templatePath = path.join(__dirname, 'templates', `${templateName}.html`);
+    try {
+      return fs.readFileSync(templatePath, 'utf-8');
+    } catch (error) {
+      log.error(`Failed to load template ${templateName}: ${error.message}`);
+      throw error;
+    }
+  }
+
   // Show loading screen
   async _showLoadingScreen() {
-    const loadingHTML = `
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Lnfi Network LN Node</title>
-          <style>
-            html, body {
-              height: 100%;
-              width: 100%;
-              margin: 0;
-              padding: 0;
-              overflow: hidden;
-              background-color: #1e1e1e;
-            }
-            body {
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              color: #e0e0e0;
-              text-align: center;
-              background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
-              display: flex;
-              flex-direction: column;
-              justify-content: center;
-              align-items: center;
-            }
-            .container {
-              max-width: 600px;
-              background: rgba(30, 30, 30, 0.95);
-              padding: 30px;
-              border-radius: 8px;
-              box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            }
-            h1 { 
-              color: #fff; 
-              margin-bottom: 20px;
-            }
-            .loader {
-              border: 5px solid rgba(255,255,255,0.1);
-              border-radius: 50%;
-              border-top: 5px solid #4ecdc4;
-              width: 50px;
-              height: 50px;
-              animation: spin 1s linear infinite;
-              margin: 20px auto;
-            }
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-            .status {
-              margin-top: 20px;
-              font-size: 14px;
-              color: #b0b0b0;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>LN Node</h1>
-            <p>Starting services, please wait...</p>
-            <div class="loader"></div>
-            <div class="status" id="status">Initializing...</div>
-          </div>
-          <script>
-            // Simple status update animation
-            const messages = [
-              "Checking environment...",
-              "Preparing services...",
-              "Loading modules...",
-              "Starting server..."
-            ];
-            let index = 0;
-            const statusEl = document.getElementById('status');
-            setInterval(() => {
-              statusEl.textContent = messages[index % messages.length];
-              index++;
-            }, 2000);
-            
-            // Ensure document title is correct
-            document.title = "Lnfi Network LN Node";
-          </script>
-        </body>
-      </html>
-    `;
+    const loadingHTML = this._loadTemplate('loading');
     
     // Use data URL to load HTML content, avoiding file system access delay
     await this.mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(loadingHTML)}`);
@@ -166,75 +107,14 @@ class WindowManager {
   async showErrorScreen(error) {
     if (!this.mainWindow) return;
     
-    const errorHTML = `
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Lnfi Network LN Node - Error</title>
-          <style>
-            html, body {
-              height: 100%;
-              width: 100%;
-              margin: 0;
-              padding: 0;
-              overflow: hidden;
-              background-color: #1e1e1e;
-            }
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              color: #e0e0e0;
-              text-align: center;
-              background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
-              display: flex;
-              justify-content: center;
-              align-items: center;
-            }
-            .container {
-              max-width: 600px;
-              background: rgba(30, 30, 30, 0.95);
-              padding: 30px;
-              border-radius: 8px;
-              box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            }
-            h1 { color: #f87171; }
-            .error-details {
-              background: rgba(248, 113, 113, 0.1);
-              border-left: 4px solid #f87171;
-              padding: 10px;
-              text-align: left;
-              margin: 20px 0;
-              font-family: monospace;
-              white-space: pre-wrap;
-              overflow-x: auto;
-              color: #e0e0e0;
-            }
-            button {
-              background: #4ecdc4;
-              color: #121212;
-              border: none;
-              padding: 10px 20px;
-              border-radius: 4px;
-              cursor: pointer;
-              margin-top: 20px;
-              font-weight: bold;
-            }
-            button:hover { background: #01a299; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>Server Start Failed</h1>
-            <p>Unable to start Lnfi Network LN Node server.</p>
-            <div class="error-details">${error.message}</div>
-            <p>Please check the log files for more information.</p>
-            <button onclick="window.location.reload()">Retry</button>
-          </div>
-          <script>
-            // Ensure document title is correct
-            document.title = "Lnfi Network LN Node - Error";
-          </script>
-        </body>
-      </html>
+    let errorHTML = this._loadTemplate('error');
+    
+    // Inject error message into template
+    const errorMessage = error.message || 'An unexpected error occurred.';
+    errorHTML += `
+      <script>
+        document.getElementById('error-message').textContent = ${JSON.stringify(errorMessage)};
+      </script>
     `;
     
     try {
@@ -248,64 +128,15 @@ class WindowManager {
   async showConnectionErrorScreen(errorDescription) {
     if (!this.mainWindow) return;
     
-    const connectionErrorHTML = `
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Lnfi Network LN Node - Connection Error</title>
-          <style>
-            html, body {
-              height: 100%;
-              width: 100%;
-              margin: 0;
-              padding: 0;
-              overflow: hidden;
-              background-color: #1e1e1e;
-            }
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              color: #e0e0e0;
-              text-align: center;
-              background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
-              display: flex;
-              justify-content: center;
-              align-items: center;
-            }
-            .container {
-              max-width: 600px;
-              background: rgba(30, 30, 30, 0.95);
-              padding: 30px;
-              border-radius: 8px;
-              box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            }
-            h1 { color: #f87171; }
-            button {
-              background: #4ecdc4;
-              color: #121212;
-              border: none;
-              padding: 10px 20px;
-              border-radius: 4px;
-              cursor: pointer;
-              margin-top: 20px;
-              font-weight: bold;
-            }
-            button:hover { background: #01a299; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>Connection Error</h1>
-            <p>Unable to connect to LN Node server.</p>
-            <p>Error: ${errorDescription}</p>
-            <p>Please ensure the server is running and port ${expressServer.getPort()} is accessible.</p>
-            <button onclick="window.location.reload()">Retry</button>
-          </div>
-          <script>
-            // Ensure document title is correct
-            document.title = "Lnfi Network LN Node - Connection Error";
-          </script>
-        </body>
-      </html>
+    let connectionErrorHTML = this._loadTemplate('connection-error');
+    
+    // Inject error details into template
+    const port = expressServer.getPort();
+    connectionErrorHTML += `
+      <script>
+        document.getElementById('error-description').textContent = 'Error: ' + ${JSON.stringify(errorDescription)};
+        document.getElementById('port-info').textContent = 'Please ensure the server is running and port ${port} is accessible.';
+      </script>
     `;
     
     try {
@@ -315,14 +146,37 @@ class WindowManager {
     }
   }
 
+  // Load the Electron-native welcome page. This is a local HTML file
+  // served over file:// so the preload is attached correctly and the
+  // welcome script can talk to main via window.welcomeAPI. The welcome
+  // page is shown BEFORE expressServer.start() is called, giving the
+  // user a safe window for backup / clear / version info actions
+  // while no backend services are running.
+  async loadWelcomePage() {
+    if (!this.mainWindow) return;
+    const welcomeFile = path.join(__dirname, 'welcome', 'welcome.html');
+    log.info(`Loading welcome page: ${welcomeFile}`);
+    try {
+      await this.mainWindow.loadFile(welcomeFile);
+      this.mainWindow.setTitle('NodeFlow');
+    } catch (err) {
+      log.error(`Failed to load welcome page: ${err.message}`);
+      throw err;
+    }
+  }
+
   // Load application URL
   async loadAppUrl() {
     if (!this.mainWindow) return;
-    
+
     const url = `http://127.0.0.1:${expressServer.getPort()}`;
     log.info(`Loading application URL: ${url}`);
-    
+
     try {
+      // 只清除当前 partition 的 HTTP 缓存
+      await this.mainWindow.webContents.session.clearCache();
+      log.info('Partition cache cleared before loading URL');
+
       await this.mainWindow.loadURL(url);
     } catch (error) {
       log.error(`Failed to load application URL: ${error.message}`);
@@ -339,7 +193,7 @@ class WindowManager {
       log.info('Application page started loading');
       // Keep title unchanged
       if (this.mainWindow) {
-        this.mainWindow.setTitle('Lnfi Network LN Node');
+        this.mainWindow.setTitle('NodeFlow');
       }
     });
     
@@ -348,7 +202,7 @@ class WindowManager {
       
       // Set correct title
       if (this.mainWindow) {
-        this.mainWindow.setTitle('Lnfi Network LN Node');
+        this.mainWindow.setTitle('NodeFlow');
         
         // Ensure page content is visible
         if (this.mainWindow.isMinimized()) {
@@ -394,6 +248,70 @@ class WindowManager {
       }
     });
     
+    // User-initiated close path (red X button on macOS / Windows, Cmd+W
+    // on macOS, Ctrl+W on Windows/Linux). For a wallet-managing app we
+    // want an explicit confirm step before stopping the node — an
+    // accidental close should NOT silently tear down Lightning services.
+    //
+    // Flow:
+    //   1. First close event: quitApproved is false → preventDefault and
+    //      show a native confirm dialog parented to this window.
+    //   2. User picks "Cancel" → dialog closes, window stays open.
+    //   3. User picks "Quit NodeFlow" → we set quitApproved=true and call
+    //      mainWindow.close() again. The handler re-enters, sees the
+    //      flag, and passes through without re-prompting.
+    //   4. The window actually closes, window-all-closed fires, main.js
+    //      runs performCleanup() + app.exit(0) on every platform.
+    //
+    // Cmd+Q / menu Quit / SIGINT / uncaughtException paths DO NOT fire
+    // the window close event (they go straight to before-quit or
+    // app.exit) so they bypass this dialog on purpose.
+    this.mainWindow.on('close', async (event) => {
+      if (this.quitApproved) return; // let the close proceed
+      event.preventDefault();
+      if (this._confirmInFlight) return;
+      this._confirmInFlight = true;
+      try {
+        const iconPath = path.join(__dirname, '..', '..', 'assets', 'logo100.svg');
+        const appIcon = fs.existsSync(iconPath)
+          ? nativeImage.createFromPath(iconPath).resize({ width: 64, height: 64 })
+          : undefined;
+        const result = await dialog.showMessageBox(this.mainWindow, {
+          type: 'question',
+          buttons: ['Cancel', 'Quit NodeFlow'],
+          defaultId: 0,
+          cancelId: 0,
+          title: 'Quit NodeFlow',
+          message: 'Are you sure you want to quit NodeFlow?',
+          detail:
+            'This will stop the Lightning node and all background ' +
+            'services (rgb-lightning-node, litd, tor).',
+          noLink: true,
+          ...(appIcon ? { icon: appIcon } : {}),
+        });
+        if (result.response === 1) {
+          log.info('[window-manager] user confirmed quit from close dialog');
+          this.quitApproved = true;
+          if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+            this.mainWindow.close();
+          }
+        } else {
+          log.info('[window-manager] user cancelled close');
+        }
+      } catch (e) {
+        log.error(`[window-manager] close-confirm dialog failed: ${e.message}`);
+        // If the dialog itself failed, be conservative and allow the
+        // close (the alternative is a window stuck open with no way to
+        // shut it down except force-kill).
+        this.quitApproved = true;
+        if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+          this.mainWindow.close();
+        }
+      } finally {
+        this._confirmInFlight = false;
+      }
+    });
+
     // Triggered when window is closed
     this.mainWindow.on('closed', () => {
       this.mainWindow = null;

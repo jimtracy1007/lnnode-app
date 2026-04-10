@@ -69,11 +69,7 @@ jspm_packages/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
-.env
-.env.test
-.env.production
-.env.local
+
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -114,8 +110,15 @@ wallet.dat
 *.key
 *.pem 
 
+# Keep bin/ directory for embedded binaries
+# bin/
+
+# Only embed Tor binaries (too large: litd ~110MB, rgb-lightning-node ~60MB)
+# These will be downloaded on first install via fetch-binaries.js
 bin
+
 READLNLINK.md
 CLAUDE.md
 todo.md
 QWEN.md
+.omc/

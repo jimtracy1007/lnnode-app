@@ -11,11 +11,8 @@ class NostrService {
     
     // Default relay list
     this.defaultRelays = [
-      'wss://relay.damus.io',
-      'wss://relay.nostr.band',
-      'wss://nos.lol',
-      'wss://relay.nostr.info',
-      'wss://relay.snort.social'
+      'wss://relay.snort.social',
+      'wss://relay01.lnfi.network'
     ];
     
     log.info("Nostr service initialized with npub:", this.npub);
@@ -52,10 +49,7 @@ class NostrService {
       }
       // Default relay list with read/write settings
       return {
-        'wss://relay01.lnfi.network': { read: true, write: true },
-        'wss://relay02.lnfi.network': { read: true, write: true },
-        'wss://nostr-01.yakihonne.com': { read: true, write: true },
-        'wss://nostr-02.yakihonne.com': { read: true, write: true },
+        'wss://relay.snort.social': { read: true, write: true },
       };
     } catch (error) {
       throw new Error(`Failed to get relays: ${error.message}`);

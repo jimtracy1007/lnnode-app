@@ -8,14 +8,12 @@ const nostrService = require('./nostr-service');
 const detectPort = require('detect-port');
 
 
-const LnLinkElectron = require('ln-link');
+const LnLinkElectron = require('lnlink-server');
 class ExpressServer {
   constructor() {
     this.lnLink = null;
     this.serverReady = false;
     this.port = '8091';
-    this.litdTracked = false;
-    this.rgbTracked = false;
   }
 
   getPort() {
@@ -63,61 +61,6 @@ class ExpressServer {
     throw new Error(`No available port found starting from ${basePort}`);
   }
 
-  // Check for and track processes by name (cross-platform)
-  async checkAndTrackProcess(processName, trackFunction) {
-    // Double check if already tracked (safety measure)
-    if (processName === 'litd' && this.litdTracked) {
-      log.debug(`${processName} already tracked, skipping check`);
-      return;
-    }
-    if (processName === 'rgb-lightning-node' && this.rgbTracked) {
-      log.debug(`${processName} already tracked, skipping check`);
-      return;
-    }
-
-    log.debug(`Searching for ${processName} process...`);
-    try {
-      const { default: psList } = await import('ps-list');
-      const list = await psList();
-      const match = list.find((p) => {
-        const cmd = `${p.name} ${p.cmd || ''}`;
-        if (processName === 'litd') {
-          return /\blitd\b/.test(cmd) && /--disableui/.test(cmd);
-        }
-        if (processName === 'rgb-lightning-node') {
-          return /rgb-lightning-node/.test(cmd) && /--daemon-listening-port/.test(cmd);
-        }
-        return cmd.includes(processName);
-      });
-
-      if (match && match.pid) {
-        const mainPid = match.pid;
-        log.info(`Found ${processName} process with PID: ${mainPid}`);
-        const mockProcess = {
-          pid: mainPid,
-          kill: (signal) => {
-            try {
-              process.kill(mainPid, signal);
-              return true;
-            } catch (e) {
-              log.error(`Error killing ${processName} process: ${e.message}`);
-              return false;
-            }
-          },
-          on: () => {}
-        };
-        trackFunction(mockProcess);
-        log.info(`${processName} process successfully tracked and registered`);
-      } else {
-        log.warn(`No ${processName} process found - it may not have started yet`);
-        if (processName === 'litd') this.litdTracked = false;
-        if (processName === 'rgb-lightning-node') this.rgbTracked = false;
-      }
-    } catch (e) {
-      log.error(`Failed to list processes: ${e.message}`);
-    }
-  }
-
   // Start Express server
   async start() {
     try {
@@ -126,13 +69,23 @@ class ExpressServer {
       const availablePort = await this.findAvailablePort(basePort);
       this.port = availablePort.toString();
 
-      log.info(`Using port ${this.port} for LN-Link server`);
+      log.info(`Using port ${this.port} for lnlink-server`);
+
+      // RGB node version compatibility check USED to live here and pop a
+      // modal dialog before lnlink-server spawned rgb-lightning-node. In
+      // Phase 2 it has been relocated to the welcome page: welcome.js
+      // calls welcome:version-check (backed by rgb-version-checker's
+      // inspectOnly / performLdkResetWithBackup) BEFORE the user is even
+      // allowed to click Start. By the time this code runs, the user has
+      // already resolved any breaking-upgrade situation on the welcome
+      // screen — if they had not, Start would have been disabled and we
+      // would not be executing expressServer.start() at all.
 
       // Plan A: ensure user database exists by copying from template at first run
       const dataPath = pathManager.getDataPath();
-      const userDbDir = path.join(dataPath, 'link');
+      const userDbDir = path.join(dataPath, '.link');
       const userDbPath = path.join(userDbDir, 'lnlink.db');
-      const templateDbPath = path.join(pathManager.getAppDataPath(), 'link', 'lnlink.db');
+      const templateDbPath = path.join(pathManager.getAppDataPath(), '.link', 'lnlink.db');
 
       if (!fs.existsSync(userDbPath)) {
         try {
@@ -153,40 +106,98 @@ class ExpressServer {
         log.info(`Using existing user DB at: ${userDbPath}`);
       }
 
-      // Ensure LINK_DATABASE_URL is set for ln-link initialization
+      // Apply any pending Prisma migrations to the user DB. This handles upgrades
+      // where the bundled schema has new tables/columns but the user's existing
+      // sqlite file was created against an older schema. No-op on fresh installs.
+      //
+      // FAIL-CLOSE: a failed migration leaves the DB in an unknown/partial state.
+      // For a wallet-managing app, booting lnlink-server against a half-migrated
+      // schema can corrupt rows the user can never get back. If the migrator
+      // returns { ok: false } for any reason that is NOT a benign "skipped"
+      // advisory, we throw a classified error that the welcome page catches
+      // and surfaces as a dedicated "Database Migration Failed" banner.
+      {
+        const dbMigrator = require('./db-migrator');
+        let result;
+        try {
+          result = await dbMigrator.runMigrateDeploy(userDbPath);
+        } catch (e) {
+          // Unexpected throw from the migrator itself — treat as a fatal
+          // migration failure so the user's data is not corrupted.
+          log.error(`[express-server] DB migrator threw: ${e.message}`);
+          const migErr = new Error(`Database migrator threw: ${e.message}`);
+          migErr.classification = 'migration';
+          migErr.dbPath = userDbPath;
+          throw migErr;
+        }
+        if (!result || !result.ok) {
+          if (result && result.skipped) {
+            // Advisory: migrations folder not shipped in this build. On a
+            // fresh install the template DB already matches the bundled
+            // schema so there is nothing to do. Log loudly and continue.
+            log.warn(
+              `[express-server] DB migrations skipped: ${result.reason}. ` +
+                'Continuing with the DB as-is.',
+            );
+          } else {
+            const detail =
+              (result && result.failed ? `at ${result.failed}: ` : '') +
+              (result && result.error ? result.error : 'unknown error');
+            log.error(`[express-server] DB migration failed: ${detail}`);
+            const migErr = new Error(`Database migration failed: ${detail}`);
+            migErr.classification = 'migration';
+            migErr.failedMigration = (result && result.failed) || null;
+            migErr.dbPath = userDbPath;
+            throw migErr;
+          }
+        }
+      }
+
+      // Ensure LINK_DATABASE_URL is set for lnlink-server initialization
       process.env.LINK_DATABASE_URL = `file:${userDbPath}`;
       log.info(`Set LINK_DATABASE_URL: ${process.env.LINK_DATABASE_URL}`);
 
-      // Create LN-Link instance with configuration
+
+      // Create lnlink-server instance with configuration
       const config = {
         dataPath: dataPath,
-        network: process.env.LINK_NETWORK || 'regtest', // default to testnet
         httpPort: parseInt(this.port),
-        name: 'LN-Link-App', // Application name
-        enableTor: process.env.LINK_ENABLE_TOR === 'true' || false,
+        name: 'NodeFlow',
         owner: nostrService.getNpub(),
         binaryPath: pathManager.getBinaryPath(),
-        debug: !process.env.NODE_ENV || process.env.NODE_ENV !== 'production'
+        debug: false,
+        reportBaseUrl: 'https://devoffaucet.unift.xyz',
+        reportAddress: 'npub1q7amuklx0fjw76dtulzzhhjmff8du5lyngw377d89hhrmj49w48ssltn7y',
+        rgbLdkPeerListeningPort: 9750,
+        rgbHost: 'localhost'
       };
 
-      log.info('Creating LN-Link instance with config:', config);
+      log.info('Creating lnlink-server instance with config:', config);
 
       this.lnLink = new LnLinkElectron(config);
 
-      // Initialize LN-Link (sets up environment variables + database initialization)
-      log.info('Initializing LN-Link...');
+      // Initialize lnlink-server (sets up environment variables + database initialization)
+      log.info('Initializing lnlink-server...');
       await this.lnLink.initialize();
 
-      // Start LN-Link service
-      log.info('Starting LN-Link service...');
-      await this.lnLink.start();
+      // Start lnlink-server service
+      log.info('Starting lnlink-server service...');
+      const result = await this.lnLink.start();
+
+      // Sync port: the backend's assignAvailablePorts() in getConfig may have
+      // reassigned the port if the original was taken between our probe and bind.
+      // Always use the actual listening port from the backend to avoid UI mismatch.
+      if (result?.port && result.port.toString() !== this.port) {
+        log.warn(`Port changed by backend: ${this.port} -> ${result.port} (syncing)`);
+        this.port = result.port.toString();
+      }
 
       this.serverReady = true;
-      log.info('LN-Link server started successfully');
+      log.info(`lnlink-server started successfully on port ${this.port}`);
 
       return true;
     } catch (error) {
-      log.error(`Failed to start LN-Link server: ${error.message}`);
+      log.error(`Failed to start lnlink-server: ${error.message}`);
       throw error;
     }
   }
@@ -195,19 +206,28 @@ class ExpressServer {
   // Stop the server
   async stop() {
     if (this.lnLink) {
-      log.info('Stopping LN-Link server');
+      log.info('Stopping lnlink-server');
       try {
         await this.lnLink.stop();
       } catch (e) {
-        log.error('Error stopping LN-Link server:', e);
+        log.error('Error stopping lnlink-server:', e);
       }
       this.lnLink = null;
       this.serverReady = false;
     }
 
-    // Reset tracking flags
-    this.litdTracked = false;
-    this.rgbTracked = false;
+  }
+
+  // Get PIDs of all managed child processes from lnlink-server
+  getServicePids() {
+    if (this.lnLink) {
+      try {
+        return this.lnLink.getServicePids();
+      } catch (e) {
+        log.error('Failed to get service PIDs:', e);
+      }
+    }
+    return { litd: null, tor: null, rgb: null };
   }
 
   // Check if server is running

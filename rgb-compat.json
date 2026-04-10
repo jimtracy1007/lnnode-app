@@ -1,0 +1,6 @@
+{
+  "_comment": "Versions of rgb-lightning-node that introduce on-disk incompatibility (LDK channel monitor, bdk_db schema, rgb_lib_db schema, etc.). Upgrading across any of these versions requires wiping .rgb/ data. When bumping rgb-lightning-node in binaries.json, review the upstream changelog and append any new breaking release tag here. Non-breaking bumps (pure patch/rc without schema changes) should leave this file untouched — the checker will silently refresh its stamp.",
+  "breakingVersions": [
+    "v0.2.1-rc.6"
+  ]
+}

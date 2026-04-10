@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  Plan A prebuild script:
- - Use Prisma CLI (node_modules/prisma/build/index.js) against ln-link's schema
+ - Use Prisma CLI (node_modules/prisma/build/index.js) against lnlink-server's schema
  - Generate client and run migrate deploy into ./data/link/lnlink.db
  - This produces a fully migrated template DB that will be packed into the app
 */
@@ -31,15 +31,27 @@ function runPrisma(args, env) {
 }
 
 function main() {
-  const schemaPath = path.join(process.cwd(), 'node_modules', 'ln-link', 'prisma', 'schema.prisma');
-  if (!fs.existsSync(schemaPath)) {
-    console.error(`ln-link schema.prisma not found at ${schemaPath}`);
+  // 优先从 dist/prisma 查找，如果不存在则回退到根目录的 prisma
+  const distSchemaPath = path.join(process.cwd(), 'node_modules', 'lnlink-server', 'dist', 'prisma', 'schema.prisma');
+  const rootSchemaPath = path.join(process.cwd(), 'node_modules', 'lnlink-server', 'prisma', 'schema.prisma');
+  
+  let schemaPath;
+  if (fs.existsSync(distSchemaPath)) {
+    schemaPath = distSchemaPath;
+    console.log(`📁 Using schema from dist: ${schemaPath}`);
+  } else if (fs.existsSync(rootSchemaPath)) {
+    schemaPath = rootSchemaPath;
+    console.log(`📁 Using schema from root: ${schemaPath}`);
+  } else {
+    console.error(`lnlink-server schema.prisma not found at:`);
+    console.error(`  - ${distSchemaPath}`);
+    console.error(`  - ${rootSchemaPath}`);
     process.exit(1);
   }
 
   // Ensure generator block contains required binaryTargets for mac builds
   const schemaContent = fs.readFileSync(schemaPath, 'utf8');
-  const binaryTargetsLine = '  binaryTargets = ["native", "darwin", "darwin-arm64"]';
+  const binaryTargetsLine = '  binaryTargets = ["native", "darwin", "darwin-arm64", "windows", "debian-openssl-3.0.x"]';
   if (!schemaContent.includes('binaryTargets')) {
     const providerLine = '  provider = "prisma-client-js"';
     if (!schemaContent.includes(providerLine)) {
@@ -54,7 +66,7 @@ function main() {
     console.log('🛠️ Updated schema.prisma to include binaryTargets for mac binaries.');
   }
 
-  const dataDir = path.join(process.cwd(), 'data', 'link');
+  const dataDir = path.join(process.cwd(), 'data', '.link');
   ensureDir(dataDir);
   const dbPath = path.join(dataDir, 'lnlink.db');
 
