@@ -115,16 +115,32 @@ function getExpectedRgbVersion() {
  */
 function parseVersion(tag) {
   if (typeof tag !== 'string') return null;
-  const m = tag.trim().match(/^v?(\d+)\.(\d+)\.(\d+)(?:-([a-zA-Z0-9]+)(?:\.(\d+))?)?$/);
-  if (!m) return null;
-  return {
-    major: Number(m[1]),
-    minor: Number(m[2]),
-    patch: Number(m[3]),
-    pre: m[4] || null,       // e.g. "rc", "alpha", "beta"
-    preNum: m[5] != null ? Number(m[5]) : null,
-    raw: tag,
-  };
+  const t = tag.trim();
+  // Full semver: v0.2.1-rc.6
+  const m = t.match(/^v?(\d+)\.(\d+)\.(\d+)(?:-([a-zA-Z0-9]+)(?:\.(\d+))?)?$/);
+  if (m) {
+    return {
+      major: Number(m[1]),
+      minor: Number(m[2]),
+      patch: Number(m[3]),
+      pre: m[4] || null,
+      preNum: m[5] != null ? Number(m[5]) : null,
+      raw: tag,
+    };
+  }
+  // Short-form: v2 or v2.1 (legacy stamps from older builds) — pad with zeros
+  const s = t.match(/^v?(\d+)(?:\.(\d+))?$/);
+  if (s) {
+    return {
+      major: Number(s[1]),
+      minor: s[2] != null ? Number(s[2]) : 0,
+      patch: 0,
+      pre: null,
+      preNum: null,
+      raw: tag,
+    };
+  }
+  return null;
 }
 
 /**

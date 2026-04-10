@@ -17,7 +17,15 @@ const pathManager = require('../utils/path-manager');
 // Top-level entries under the data dir that we never copy into a backup:
 //   backups/ -> prevents recursive backup-of-backups
 //   logs/    -> noisy, not state, large, not worth preserving across wipe
-const BACKUP_SKIP = new Set(['backups', 'logs']);
+// Chromium singleton-lock files live in userData and are managed entirely
+// by the Electron/Chromium runtime — never back them up or delete them.
+// Chromium/Electron runtime entries in userData — never back up or wipe these.
+const BACKUP_SKIP = new Set([
+  'backups',
+  'SingletonCookie', 'SingletonLock', 'SingletonSocket',
+  'Local Storage', 'Session Storage', 'GPUCache', 'Code Cache',
+  'Network', 'blob_storage', 'Partitions',
+]);
 
 function getDataEntriesForBackup() {
   const dataRoot = pathManager.getDataPath();
@@ -141,12 +149,24 @@ function getBundledVersions() {
  * Safe to call from main or from IPC-exposed handlers.
  */
 function getAppInfo() {
+  let logDir = null;
+  try {
+    const electronLog = require('../utils/logger');
+    const logFile = electronLog.transports.file.getFile();
+    if (logFile && logFile.path) {
+      logDir = require('path').dirname(logFile.path);
+    }
+  } catch {
+    // non-fatal
+  }
   return {
     appVersion: app.getVersion(),
     electronVersion: process.versions.electron,
     nodeVersion: process.versions.node,
     platform: `${os.platform()}-${os.arch()}`,
     dataDir: pathManager.getDataPath(),
+    logDir,
+    lnlinkLogDir: path.join(pathManager.getDataPath(), '.logs'),
     ...getBundledVersions(),
   };
 }

@@ -90,7 +90,12 @@ async function showVersions() {
 // Top-level entries under the data dir that we never copy into a backup:
 //   backups/ -> prevents recursive backup-of-backups
 //   logs/    -> noisy, not state, large
-const BACKUP_SKIP = new Set(['backups', 'logs']);
+const BACKUP_SKIP = new Set([
+  'backups',
+  'SingletonCookie', 'SingletonLock', 'SingletonSocket',
+  'Local Storage', 'Session Storage', 'GPUCache', 'Code Cache',
+  'Network', 'blob_storage', 'Partitions',
+]);
 
 function getDataEntriesForBackup() {
   const dataRoot = pathManager.getDataPath();
@@ -287,6 +292,77 @@ async function clearAndRestart() {
   app.exit(0);
 }
 
+/* -------------------------- return to welcome --------------------------- */
+
+/**
+ * Stop all services and navigate back to the welcome page.
+ * The welcome page is the safe pre-express entry point for Backup / Clear.
+ */
+async function returnToWelcome() {
+  const parent = BrowserWindow.getFocusedWindow();
+  const confirm = await dialog.showMessageBox(parent || undefined, {
+    type: 'question',
+    title: 'Return to Welcome Page',
+    message: 'Stop all services and return to the welcome page?',
+    detail:
+      'rgb-lightning-node, litd, and Tor will be stopped. ' +
+      'You can use the welcome page to back up or clear your data, ' +
+      'then restart services.',
+    buttons: ['Return to Welcome', 'Cancel'],
+    defaultId: 0,
+    cancelId: 1,
+    noLink: true,
+  });
+  if (confirm.response !== 0) return;
+
+  const expressServer = require('../services/express-server');
+  const windowManager = require('./window-manager');
+  const processManager = require('../services/process-manager');
+
+  // Snapshot service PIDs before stop so processManager can force-kill
+  // any orphans if lnLink.stop() times out.
+  try {
+    processManager.snapshotServicePids(expressServer.getServicePids());
+  } catch (e) {
+    log.warn(`[menu/return-to-welcome] could not snapshot PIDs: ${e.message}`);
+  }
+
+  try {
+    log.info('[menu/return-to-welcome] stopping express server');
+    await Promise.race([
+      expressServer.stop(),
+      new Promise((resolve) => setTimeout(resolve, 8000)),
+    ]);
+  } catch (e) {
+    log.error(`[menu/return-to-welcome] expressServer.stop failed: ${e.message}`);
+    // Continue — load the welcome page anyway.
+  }
+
+  // Force-kill any remaining litd/rgb/tor processes to avoid orphans that
+  // would conflict when the user clicks Start again.
+  try {
+    processManager.killAllProcesses();
+    // Reset the shutdown flag after a short delay so Start works again.
+    setTimeout(() => { processManager.isShuttingDown = false; }, 3500);
+  } catch (e) {
+    log.warn(`[menu/return-to-welcome] killAllProcesses failed: ${e.message}`);
+  }
+
+  try {
+    await windowManager.loadWelcomePage();
+    log.info('[menu/return-to-welcome] welcome page loaded');
+  } catch (e) {
+    log.error(`[menu/return-to-welcome] loadWelcomePage failed: ${e.message}`);
+    await dialog.showMessageBox(parent || undefined, {
+      type: 'error',
+      title: 'Navigation Failed',
+      message: 'Could not load the welcome page',
+      detail: e.message,
+      buttons: ['OK'],
+    });
+  }
+}
+
 /* -------------------------------- menu ---------------------------------- */
 
 function buildAppMenu() {
@@ -325,14 +401,6 @@ function buildAppMenu() {
       : []),
 
     // File
-    //
-    // Phase 1 deliberately does NOT expose Backup / Clear menu items.
-    // The Electron-native welcome page (src/ui/welcome/) is the single
-    // entry point for those destructive actions because it runs BEFORE
-    // expressServer.start() — the only safe window to touch on-disk
-    // state while no rgb-lightning-node / litd / tor process is holding
-    // file locks. Re-adding menu items would require the marker-file
-    // + relaunch dance; that is left for Phase 3.
     {
       label: 'File',
       submenu: [
@@ -341,6 +409,11 @@ function buildAppMenu() {
           click: () => {
             shell.openPath(pathManager.getDataPath());
           },
+        },
+        { type: 'separator' },
+        {
+          label: 'Return to Welcome Page…',
+          click: () => returnToWelcome(),
         },
         { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' },
@@ -414,6 +487,29 @@ function buildAppMenu() {
           label: 'Open Data Directory',
           click: () => {
             shell.openPath(pathManager.getDataPath());
+          },
+        },
+        {
+          label: 'Open Logs Directory',
+          click: () => {
+            try {
+              const electronLog = require('../utils/logger');
+              const logFile = electronLog.transports.file.getFile();
+              if (logFile && logFile.path) {
+                shell.showItemInFolder(logFile.path);
+              }
+            } catch (e) {
+              log.error(`[menu] failed to open logs dir: ${e.message}`);
+            }
+          },
+        },
+        {
+          label: 'Open lnlink Logs Directory',
+          click: () => {
+            const lnlinkLogDir = path.join(pathManager.getDataPath(), '.logs');
+            shell.openPath(lnlinkLogDir).catch((e) => {
+              log.error(`[menu] failed to open lnlink logs dir: ${e.message}`);
+            });
           },
         },
       ],

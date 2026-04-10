@@ -35,8 +35,8 @@ html, body { height: 100%; }
 body {
   background: radial-gradient(1200px circle at 50% -10%, #1b1b1b 0%, var(--bg-dark) 60%);
   color: var(--text-primary);
-  font-family: "Inter", "SF Pro Text", "Segoe UI", system-ui, sans-serif;
-  font-size: 14px;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   display: flex;
@@ -85,7 +85,7 @@ code, .footer-line code {
   color: #fff;
 }
 .brand-tagline {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-secondary);
   margin-top: 2px;
   letter-spacing: 0.01em;
@@ -96,7 +96,7 @@ code, .footer-line code {
 .banner {
   padding: 14px 18px;
   border-radius: 12px;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.55;
   border: 1px solid transparent;
 }
@@ -121,13 +121,13 @@ code, .footer-line code {
   letter-spacing: 0.01em;
 }
 .banner-body {
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.55;
   color: rgba(255, 255, 255, 0.82);
 }
 .banner-body code {
   font-family: "SF Mono", Menlo, Consolas, monospace;
-  font-size: 11.5px;
+  font-size: 12px;
   padding: 1px 6px;
   background: rgba(0, 0, 0, 0.35);
   border-radius: 4px;
@@ -144,7 +144,7 @@ code, .footer-line code {
   border-radius: 8px;
   border: 1px solid transparent;
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, opacity 0.15s;
@@ -194,7 +194,7 @@ code, .footer-line code {
   grid-template-columns: max-content 1fr;
   column-gap: 24px;
   row-gap: 10px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .version-list dt {
   color: var(--text-secondary);
@@ -203,7 +203,7 @@ code, .footer-line code {
 .version-list dd {
   color: var(--text-primary);
   font-family: "SF Mono", "Menlo", "Consolas", "Liberation Mono", monospace;
-  font-size: 12.5px;
+  font-size: 13px;
   text-align: right;
   word-break: break-all;
   user-select: text;
@@ -279,7 +279,7 @@ code, .footer-line code {
   background: var(--bg-elevated);
   color: var(--text-primary);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
@@ -350,7 +350,7 @@ code, .footer-line code {
   background: #1e1e1e;
   border: 1px solid var(--border-color);
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: 14px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
   opacity: 0;
   transition: opacity 0.18s, transform 0.18s;
@@ -396,12 +396,88 @@ code, .footer-line code {
 }
 .overlay-text {
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 0.02em;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* ----------------------------- port check ----------------------------- */
+
+.port-check-hidden { display: none; }
+
+.port-check {
+  background: rgba(255, 160, 0, 0.07);
+  border: 1px solid rgba(255, 160, 0, 0.25);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 0.78rem;
+}
+
+.port-check-title {
+  color: #ffad33;
+  font-weight: 600;
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.port-check-note {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.port-conflict-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.port-conflict-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+}
+
+.port-conflict-item.severity-info {
+  opacity: 0.75;
+}
+
+.port-conflict-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.port-conflict-key {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.port-conflict-proc {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.port-conflict-port {
+  font-family: 'SFMono-Regular', 'Consolas', monospace;
+  color: #ffcc66;
+  font-size: 0.75rem;
+  white-space: nowrap;
 }
 
 /* ----------------------------- responsive ----------------------------- */

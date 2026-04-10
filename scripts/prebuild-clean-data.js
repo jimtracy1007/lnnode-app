@@ -98,3 +98,27 @@ if (removedFiles === 0) {
     console.warn('');
   }
 }
+
+// Wipe all runtime data from the template DB so developer state (owner_npub,
+// node keys, lnlink_users, etc.) never ships to end users. Schema and
+// migrations are preserved; only data rows are deleted.
+const templateDb = path.join(dataDir, '.link', 'lnlink.db');
+if (fs.existsSync(templateDb)) {
+  try {
+    const { execFileSync } = require('child_process');
+    const dataTables = [
+      'lnlink_config',
+      'lnlink_users',
+      'lnlink_orders',
+      'lnlink_transactions',
+      'lnlink_nostr_events',
+      'exchange_orders',
+    ];
+    const sql = dataTables.map(t => `DELETE FROM ${t};`).join(' ') + ' VACUUM;';
+    execFileSync('sqlite3', [templateDb, sql], { stdio: 'pipe' });
+    console.log('[clean-data] Template DB data tables cleared (schema preserved)');
+  } catch (e) {
+    // sqlite3 CLI may not be available in all CI environments — log and continue.
+    console.warn(`[clean-data] Could not clear template DB (sqlite3 not available?): ${e.message}`);
+  }
+}

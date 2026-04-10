@@ -8,6 +8,14 @@ const envPath = app.isPackaged
   : path.join(__dirname, '..', '.env');
 
 require('dotenv').config({ path: envPath });
+
+// Pin userData directory to 'nodeflow-app' BEFORE any module that calls
+// app.getPath('userData') is loaded (pathManager reads it at require-time).
+// Must be called before app.whenReady() per Electron docs.
+if (app.isPackaged) {
+  app.setPath('userData', path.join(app.getPath('appData'), 'nodeflow-app'));
+}
+
 // DO NOT REMOVE: some downstream code (Nostr heartbeat path and likely
 // nostr-tools internals) uses a bare `crypto.<method>` reference expecting
 // the Node `crypto` module to be available as a global. Node 19+ ships
@@ -24,26 +32,27 @@ const processManager = require('./services/process-manager');
 const expressServer = require('./services/express-server');
 const windowManager = require('./ui/window-manager');
 const menuManager = require('./ui/menu-manager');
+const pathManager = require('./utils/path-manager');
 const { registerNostrHandlers } = require('./ipc/nostr-handlers');
 const { registerWelcomeHandlers } = require('./ipc/welcome-handlers');
 
 // Brand the app as "NodeFlow" in the macOS menu bar during development.
-//
-// Why only in dev: calling app.setName() changes what app.getPath('userData')
-// resolves to, which would move packaged users' data from
-//   ~/Library/Application Support/LN-Link/
-// to
-//   ~/Library/Application Support/NodeFlow/
-// and silently orphan existing wallets. path-manager.js uses a hardcoded
-// local ./data path in dev (see src/utils/path-manager.js:38) so the
-// rename is harmless there, but in packaged mode it would be catastrophic.
-//
-// To fully rebrand the packaged build, change `build.productName` in
-// package.json to "NodeFlow" AND add a migration step that moves the old
-// userData dir to the new name on first launch. That's a separate piece
-// of work from this dev-side menu rename.
+// In packaged builds, the name is taken from CFBundleName (set to "NodeFlow"
+// via build.productName in package.json). The migration helper below handles
+// the one-time rename of the old LN-Link userData directory.
 if (!app.isPackaged) {
   app.setName('NodeFlow');
+  // Set dock icon in dev mode so macOS dialogs show the NodeFlow logo
+  // instead of the default Electron icon. In production the bundle's
+  // .icns file is used automatically.
+  if (process.platform === 'darwin' && app.dock) {
+    const { nativeImage } = require('electron');
+    const fs = require('fs');
+    const devIconPath = path.join(__dirname, '..', 'assets', 'logo100.svg');
+    if (fs.existsSync(devIconPath)) {
+      app.dock.setIcon(nativeImage.createFromPath(devIconPath));
+    }
+  }
 }
 
 // Single-instance lock. Running two LN-Link instances against the same
@@ -371,10 +380,42 @@ async function performCleanup() {
   processManager.killAllProcesses();
 }
 
+/**
+ * One-time migration: rename the old LN-Link userData directory to NodeFlow.
+ * Only runs in packaged builds (dev uses a hardcoded ../../data path).
+ * Safe to call before createMainWindow — pathManager only stores the path
+ * string; the directory doesn't need to exist at construction time.
+ */
+function migrateUserDataIfNeeded() {
+  if (!app.isPackaged) return;
+  const fs = require('fs');
+  const newPath = pathManager.getDataPath(); // ~/Library/Application Support/nodeflow-app
+  const appData = path.dirname(newPath);
+  // Previous directory names used before the nodeflow-app rename.
+  const legacyNames = ['ln-link-app', 'LN-Link', 'NodeFlow'];
+  try {
+    if (fs.existsSync(newPath)) return; // already migrated
+    for (const name of legacyNames) {
+      const oldPath = path.join(appData, name);
+      if (fs.existsSync(oldPath)) {
+        fs.renameSync(oldPath, newPath);
+        log.info(`[migration] userData migrated: ${oldPath} → ${newPath}`);
+        return;
+      }
+    }
+  } catch (e) {
+    log.error(`[migration] userData migration failed: ${e.message}`);
+    // Non-fatal: proceed anyway; user will see an empty fresh data dir.
+  }
+}
+
 // Main application initialization
 async function initApp() {
   try {
     log.info('Starting Lightning Network Node application');
+
+    // Migrate userData directory from LN-Link → NodeFlow (packaged builds only).
+    migrateUserDataIfNeeded();
 
     // Create the main application window
     await windowManager.createMainWindow();

@@ -34,6 +34,8 @@
 
     <section id="status-banner" class="banner banner-hidden" role="alert"></section>
 
+    <section id="port-check-section" class="port-check-hidden" role="status"></section>
+
     <section class="card">
       <div class="card-header">
         <h2 class="card-title">Bundled Components</h2>
@@ -42,14 +44,11 @@
         <dt>NodeFlow</dt>          <dd id="v-app">—</dd>
         <dt>rgb-lightning-node</dt><dd id="v-rgb">—</dd>
         <dt>litd</dt>              <dd id="v-litd">—</dd>
-        <dt>Electron</dt>          <dd id="v-electron">—</dd>
-        <dt>Node.js</dt>           <dd id="v-node">—</dd>
-        <dt>Platform</dt>          <dd id="v-platform">—</dd>
       </dl>
     </section>
 
     <button id="start-btn" class="cta-btn" type="button">
-      <span class="cta-label">Start Node</span>
+      <span class="cta-label">Start</span>
       <svg viewBox="0 0 24 24" width="20" height="20" class="cta-icon" aria-hidden="true">
         <path d="M8 5l10 7-10 7V5z" fill="currentColor"/>
       </svg>
@@ -102,6 +101,14 @@
       <p class="footer-line">
         <span class="footer-label">Data directory:</span>
         <code id="data-dir">—</code>
+      </p>
+      <p class="footer-line">
+        <span class="footer-label">Logs:</span>
+        <code id="log-dir">—</code>
+      </p>
+      <p class="footer-line">
+        <span class="footer-label">lnlink Logs:</span>
+        <code id="lnlink-log-dir">—</code>
       </p>
     </footer>
 

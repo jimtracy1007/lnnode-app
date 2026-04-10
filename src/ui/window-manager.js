@@ -1,4 +1,4 @@
-const { BrowserWindow, dialog } = require('electron');
+const { BrowserWindow, dialog, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const log = require('../utils/logger');
@@ -272,6 +272,10 @@ class WindowManager {
       if (this._confirmInFlight) return;
       this._confirmInFlight = true;
       try {
+        const iconPath = path.join(__dirname, '..', '..', 'assets', 'logo100.svg');
+        const appIcon = fs.existsSync(iconPath)
+          ? nativeImage.createFromPath(iconPath).resize({ width: 64, height: 64 })
+          : undefined;
         const result = await dialog.showMessageBox(this.mainWindow, {
           type: 'question',
           buttons: ['Cancel', 'Quit NodeFlow'],
@@ -283,6 +287,7 @@ class WindowManager {
             'This will stop the Lightning node and all background ' +
             'services (rgb-lightning-node, litd, tor).',
           noLink: true,
+          ...(appIcon ? { icon: appIcon } : {}),
         });
         if (result.response === 1) {
           log.info('[window-manager] user confirmed quit from close dialog');

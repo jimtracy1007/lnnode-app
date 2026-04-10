@@ -176,6 +176,75 @@ function escapeHtml(s) {
   })[c]);
 }
 
+/* --------------------------- port check --------------------------- */
+
+/**
+ * Probe all expected service ports and render a compact warning section
+ * if any are occupied. Runs in parallel with loadInfo() / refreshVersionCheck()
+ * and never blocks the Start button — ln-link's assignAvailablePorts() handles
+ * single-port conflicts at startup. This just surfaces them early so users
+ * aren't surprised by a cryptic crash.
+ */
+async function refreshPortCheck() {
+  const section = $('port-check-section');
+  if (!section) return;
+
+  let result;
+  try {
+    result = await window.welcomeAPI.portCheck();
+  } catch (e) {
+    // Non-fatal — silently skip if IPC fails.
+    return;
+  }
+
+  if (!result || !result.ok || !result.conflicts || result.conflicts.length === 0) {
+    section.className = 'port-check-hidden';
+    section.innerHTML = '';
+    return;
+  }
+
+  const warnings = result.conflicts.filter((c) => c.severity === 'warning');
+  const infos    = result.conflicts.filter((c) => c.severity === 'info');
+
+  const rows = result.conflicts.map((c) => {
+    const procLabel = c.processName
+      ? `${escapeHtml(c.processName)}${c.pid ? ` (PID ${c.pid})` : ''}`
+      : 'process unknown';
+    return `
+      <li class="port-conflict-item severity-${escapeHtml(c.severity)}">
+        <span class="port-conflict-left">
+          <span class="port-conflict-key">${escapeHtml(c.key)}</span>
+          <span class="port-conflict-proc">${procLabel}</span>
+        </span>
+        <span class="port-conflict-port">:${c.port}</span>
+      </li>`;
+  }).join('');
+
+  const titleCount = result.conflicts.length === 1
+    ? '1 port conflict'
+    : `${result.conflicts.length} port conflicts`;
+
+  // Only show the auto-reassign note for warning-level conflicts (tor ports
+  // don't get reassigned automatically — they're just skipped if tor disabled).
+  const noteText = warnings.length > 0
+    ? 'NodeFlow will attempt to auto-reassign conflicting ports at startup. ' +
+      'If another Lightning node is running on these ports, consider stopping it first.'
+    : 'These are Tor ports. If Tor is disabled in settings, these conflicts have no effect.';
+
+  section.innerHTML = `
+    <div class="port-check">
+      <div class="port-check-title">
+        <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true">
+          <path fill="#ffad33" d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 12a1 1 0 110-2 1 1 0 010 2zm1-4H9V6h2v4z"/>
+        </svg>
+        ${titleCount} detected
+      </div>
+      <p class="port-check-note">${noteText}</p>
+      <ul class="port-conflict-list">${rows}</ul>
+    </div>`;
+  section.className = '';
+}
+
 /* --------------------------- info loading --------------------------- */
 
 async function loadInfo() {
@@ -191,10 +260,9 @@ async function loadInfo() {
     $('v-app').textContent = info.appVersion || '—';
     $('v-rgb').textContent = info.rgb || '—';
     $('v-litd').textContent = info.litd || '—';
-    $('v-electron').textContent = info.electronVersion || '—';
-    $('v-node').textContent = info.nodeVersion || '—';
-    $('v-platform').textContent = info.platform || '—';
     $('data-dir').textContent = info.dataDir || '—';
+    $('log-dir').textContent = info.logDir || '—';
+    $('lnlink-log-dir').textContent = info.lnlinkLogDir || '—';
   } catch (e) {
     showBanner('warning', `Failed to load info: ${e.message}`);
   }
@@ -498,9 +566,11 @@ async function handleOpenDataDir() {
 }
 
 async function handleQuit() {
+  setOverlay('Shutting down…');
   try {
     await window.welcomeAPI.quit();
   } catch (e) {
+    clearOverlay();
     toast(`Quit failed: ${e.message}`, 'error');
   }
 }
@@ -525,4 +595,5 @@ document.addEventListener('DOMContentLoaded', () => {
   $('status-banner').addEventListener('click', handleBannerClick);
   loadInfo();
   refreshVersionCheck();
+  refreshPortCheck();
 });

@@ -47,6 +47,7 @@ contextBridge.exposeInMainWorld('welcomeAPI', {
   versionCheck: () => ipcRenderer.invoke('welcome:version-check'),
   resetLdk: () => ipcRenderer.invoke('welcome:reset-ldk'),
   acknowledgeVersion: () => ipcRenderer.invoke('welcome:acknowledge-version'),
+  portCheck: () => ipcRenderer.invoke('welcome:port-check'),
 });
 
 // Expose Nostr API to window.nostr

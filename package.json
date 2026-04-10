@@ -1,6 +1,6 @@
 {
   "name": "ln-link-app",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Lightning Network Node Application built with Electron",
   "main": "src/main.js",
   "scripts": {
@@ -31,8 +31,8 @@
   "license": "MIT",
   "devDependencies": {
     "asar": "^3.2.0",
-    "electron": "^28.0.0",
-    "electron-builder": "^24.9.1"
+    "electron": "^35.0.0",
+    "electron-builder": "^26.0.0"
   },
   "dependencies": {
     "@prisma/client": "6.14.0",
@@ -40,14 +40,14 @@
     "dotenv": "^17.2.3",
     "electron-log": "^5.4.0",
     "electron-store": "^8.1.0",
-    "lnlink-server": "^1.2.0",
+    "lnlink-server": "1.2.2",
     "nostr-tools": "1.17.0",
     "prisma": "6.14.0",
     "ps-list": "^7.2.0"
   },
   "build": {
     "appId": "node.lnfi.network",
-    "productName": "LN-Link",
+    "productName": "NodeFlow",
     "publish": null,
     "directories": {
       "output": "dist"
@@ -86,7 +86,7 @@
     "afterSign": "scripts/afterSign.js",
     "mac": {
       "category": "public.app-category.finance",
-      "icon": "assets/lnfi.png",
+      "icon": "assets/icon.icns",
       "hardenedRuntime": false,
       "gatekeeperAssess": false,
       "target": [
@@ -114,7 +114,7 @@
       ]
     },
     "win": {
-      "icon": "assets/lnfi.png",
+      "icon": "assets/logo100.svg",
       "target": [
         {
           "target": "nsis",
@@ -134,7 +134,7 @@
       ]
     },
     "linux": {
-      "icon": "assets/lnfi.png",
+      "icon": "assets/logo100.svg",
       "target": [
         {
           "target": "AppImage",

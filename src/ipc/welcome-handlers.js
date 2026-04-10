@@ -81,6 +81,7 @@ function registerWelcomeHandlers() {
     'welcome:version-check',
     'welcome:reset-ldk',
     'welcome:acknowledge-version',
+    'welcome:port-check',
   ];
   channels.forEach((c) => ipcMain.removeHandler(c));
 
@@ -254,6 +255,22 @@ function registerWelcomeHandlers() {
       return rgbVersionChecker.acknowledgeVersionMismatch();
     } catch (e) {
       log.error(`[welcome] acknowledge-version failed: ${e.message}`);
+      return { ok: false, error: e.message };
+    }
+  });
+
+  // Port pre-check. Probes all expected service ports and identifies any
+  // occupying processes so the welcome page can surface a clear warning
+  // before the user clicks Start. Non-blocking: ln-link's
+  // assignAvailablePorts() handles single-port conflicts at startup, but
+  // users deserve to know if port 9735 is taken by another Lightning node
+  // rather than seeing a cryptic crash message.
+  ipcMain.handle('welcome:port-check', async () => {
+    try {
+      const portChecker = require('../services/port-checker');
+      return portChecker.checkPorts();
+    } catch (e) {
+      log.error(`[welcome] port-check failed: ${e.message}`);
       return { ok: false, error: e.message };
     }
   });
