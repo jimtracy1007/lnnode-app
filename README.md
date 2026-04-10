@@ -9,7 +9,7 @@ An Electron-based desktop application for managing a Lightning Network node with
 - Process tracking and graceful cleanup for child processes (litd, rgb-lightning-node)
 - Basic Nostr integration (window.nostr) for keys and encryption helpers
 - Light/Dark theme support
-- Auto-update ready (configured via electron-updater)
+- Manual updates via GitHub Releases (see "macOS Installation Note" below)
 
 ### Tech Stack
 

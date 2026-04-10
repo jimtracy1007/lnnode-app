@@ -1,0 +1,418 @@
+/*
+ * Welcome page styles.
+ *
+ * Design tokens mirror node_modules/lnlink-server/dist/public/css/initOwner.css
+ * so that the Electron-native welcome screen feels like part of the same
+ * product as the in-app UI served by lnlink-server. Zero CDN / external
+ * font dependencies — everything is local, CSP-friendly, offline-capable.
+ */
+
+:root {
+  --lime-primary: #d0f224;
+  --lime-primary-soft: rgba(208, 242, 36, 0.12);
+  --lime-primary-border: rgba(208, 242, 36, 0.28);
+  --bg-dark: #0f0f0f;
+  --bg-elevated: #151515;
+  --card-bg: #1a1a1a;
+  --input-bg: #262626;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --text-muted: #666666;
+  --border-color: #2a2a2a;
+  --danger: #ff6b6b;
+  --danger-soft: rgba(255, 107, 107, 0.14);
+  --danger-border: rgba(255, 107, 107, 0.35);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body { height: 100%; }
+
+body {
+  background: radial-gradient(1200px circle at 50% -10%, #1b1b1b 0%, var(--bg-dark) 60%);
+  color: var(--text-primary);
+  font-family: "Inter", "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 24px 56px;
+  overflow-y: auto;
+  user-select: none;
+}
+
+code, .footer-line code {
+  user-select: text;
+}
+
+.welcome-root {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ----------------------------- header ----------------------------- */
+
+.welcome-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 4px 0;
+}
+.logo-mark {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 4px 16px rgba(208, 242, 36, 0.12));
+}
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+.brand-name {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+.brand-tagline {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  letter-spacing: 0.01em;
+}
+
+/* ----------------------------- banner ----------------------------- */
+
+.banner {
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.55;
+  border: 1px solid transparent;
+}
+.banner-hidden { display: none; }
+.banner.warning {
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+  color: #ffd3d3;
+}
+.banner.info {
+  background: var(--lime-primary-soft);
+  border-color: var(--lime-primary-border);
+  color: var(--lime-primary);
+}
+
+/* Banner title / body / actions (used by welcome.js renderVersionBanner) */
+.banner-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #fff;
+  letter-spacing: 0.01em;
+}
+.banner-body {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.82);
+}
+.banner-body code {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  padding: 1px 6px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 4px;
+  color: #fff;
+}
+.banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.banner-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+}
+.banner-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.banner-btn-primary {
+  background: var(--lime-primary);
+  color: #000;
+}
+.banner-btn-primary:hover {
+  background: #bce600;
+}
+.banner-btn-ghost {
+  background: transparent;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.banner-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* ----------------------------- card ----------------------------- */
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+  padding: 22px 24px;
+  box-shadow: 0 4px 22px rgba(0, 0, 0, 0.3);
+}
+.card-header { margin-bottom: 14px; }
+.card-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--lime-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+/* version list */
+.version-list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 24px;
+  row-gap: 10px;
+  font-size: 13px;
+}
+.version-list dt {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.version-list dd {
+  color: var(--text-primary);
+  font-family: "SF Mono", "Menlo", "Consolas", "Liberation Mono", monospace;
+  font-size: 12.5px;
+  text-align: right;
+  word-break: break-all;
+  user-select: text;
+}
+
+/* ----------------------------- primary CTA ----------------------------- */
+
+.cta-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px;
+  border-radius: 12px;
+  border: none;
+  background: var(--lime-primary);
+  color: #000;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+  box-shadow: 0 10px 28px rgba(208, 242, 36, 0.18);
+  letter-spacing: 0.01em;
+}
+.cta-btn:hover {
+  box-shadow: 0 12px 32px rgba(208, 242, 36, 0.26);
+}
+.cta-btn:active { transform: scale(0.985); }
+.cta-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+.cta-btn:disabled, .cta-btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+.cta-icon { display: block; }
+
+/* ----------------------------- recovery grid ----------------------------- */
+
+.recovery {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-left: 4px;
+}
+.action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.ghost-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: left;
+}
+.ghost-btn:hover {
+  border-color: var(--lime-primary-border);
+  background: #1c1c1c;
+}
+.ghost-btn:focus-visible {
+  outline: 2px solid var(--lime-primary);
+  outline-offset: 2px;
+}
+.ghost-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.ghost-btn:disabled:hover {
+  border-color: var(--border-color);
+  background: var(--bg-elevated);
+}
+.ghost-btn .ghost-icon {
+  display: flex;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--lime-primary);
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ghost-btn.ghost-danger:hover { border-color: var(--danger-border); }
+.ghost-btn.ghost-danger .ghost-icon { color: var(--danger); }
+.ghost-label { flex: 1; }
+
+/* ----------------------------- footer ----------------------------- */
+
+.welcome-footer {
+  padding: 8px 4px 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.footer-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.footer-label { color: var(--text-muted); }
+.footer-line code {
+  color: var(--text-secondary);
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  word-break: break-all;
+}
+
+/* ----------------------------- toast ----------------------------- */
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  padding: 12px 18px;
+  max-width: 480px;
+  border-radius: 10px;
+  background: #1e1e1e;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 13px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition: opacity 0.18s, transform 0.18s;
+  pointer-events: none;
+  z-index: 50;
+  word-break: break-word;
+}
+.toast-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.toast-hidden { display: none; }
+.toast.toast-success {
+  border-color: var(--lime-primary-border);
+}
+.toast.toast-error {
+  border-color: var(--danger-border);
+}
+
+/* ----------------------------- working overlay ----------------------------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 8, 8, 0.82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 100;
+}
+.overlay-hidden { display: none; }
+.overlay-spinner {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.08);
+  border-top-color: var(--lime-primary);
+  animation: spin 0.9s linear infinite;
+}
+.overlay-text {
+  color: var(--text-secondary);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ----------------------------- responsive ----------------------------- */
+
+@media (max-width: 520px) {
+  body { padding: 24px 16px 32px; }
+  .action-grid { grid-template-columns: 1fr; }
+  .version-list {
+    grid-template-columns: 1fr;
+    row-gap: 4px;
+  }
+  .version-list dd { text-align: left; }
+  .brand-name { font-size: 24px; }
+}

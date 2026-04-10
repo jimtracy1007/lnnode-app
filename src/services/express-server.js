@@ -71,21 +71,15 @@ class ExpressServer {
 
       log.info(`Using port ${this.port} for lnlink-server`);
 
-      // RGB node version compatibility check. Must run BEFORE any lnlink-server
-      // code spawns rgb-lightning-node, so that a binary version mismatch can
-      // prompt the user to reset .rgb/ before stale state corrupts the DB.
-      try {
-        const rgbVersionChecker = require('./rgb-version-checker');
-        const result = await rgbVersionChecker.checkAndMaybeReset();
-        if (result.action === 'reset') {
-          log.warn('RGB node data was reset due to version mismatch');
-        } else if (result.action === 'exit') {
-          log.warn('User exited due to RGB version mismatch; aborting start');
-          return false;
-        }
-      } catch (e) {
-        log.error(`RGB version check threw, continuing anyway: ${e.message}`);
-      }
+      // RGB node version compatibility check USED to live here and pop a
+      // modal dialog before lnlink-server spawned rgb-lightning-node. In
+      // Phase 2 it has been relocated to the welcome page: welcome.js
+      // calls welcome:version-check (backed by rgb-version-checker's
+      // inspectOnly / performLdkResetWithBackup) BEFORE the user is even
+      // allowed to click Start. By the time this code runs, the user has
+      // already resolved any breaking-upgrade situation on the welcome
+      // screen — if they had not, Start would have been disabled and we
+      // would not be executing expressServer.start() at all.
 
       // Plan A: ensure user database exists by copying from template at first run
       const dataPath = pathManager.getDataPath();
@@ -115,11 +109,48 @@ class ExpressServer {
       // Apply any pending Prisma migrations to the user DB. This handles upgrades
       // where the bundled schema has new tables/columns but the user's existing
       // sqlite file was created against an older schema. No-op on fresh installs.
-      try {
+      //
+      // FAIL-CLOSE: a failed migration leaves the DB in an unknown/partial state.
+      // For a wallet-managing app, booting lnlink-server against a half-migrated
+      // schema can corrupt rows the user can never get back. If the migrator
+      // returns { ok: false } for any reason that is NOT a benign "skipped"
+      // advisory, we throw a classified error that the welcome page catches
+      // and surfaces as a dedicated "Database Migration Failed" banner.
+      {
         const dbMigrator = require('./db-migrator');
-        await dbMigrator.runMigrateDeploy(userDbPath);
-      } catch (e) {
-        log.error(`DB migration step threw but continuing: ${e.message}`);
+        let result;
+        try {
+          result = await dbMigrator.runMigrateDeploy(userDbPath);
+        } catch (e) {
+          // Unexpected throw from the migrator itself — treat as a fatal
+          // migration failure so the user's data is not corrupted.
+          log.error(`[express-server] DB migrator threw: ${e.message}`);
+          const migErr = new Error(`Database migrator threw: ${e.message}`);
+          migErr.classification = 'migration';
+          migErr.dbPath = userDbPath;
+          throw migErr;
+        }
+        if (!result || !result.ok) {
+          if (result && result.skipped) {
+            // Advisory: migrations folder not shipped in this build. On a
+            // fresh install the template DB already matches the bundled
+            // schema so there is nothing to do. Log loudly and continue.
+            log.warn(
+              `[express-server] DB migrations skipped: ${result.reason}. ` +
+                'Continuing with the DB as-is.',
+            );
+          } else {
+            const detail =
+              (result && result.failed ? `at ${result.failed}: ` : '') +
+              (result && result.error ? result.error : 'unknown error');
+            log.error(`[express-server] DB migration failed: ${detail}`);
+            const migErr = new Error(`Database migration failed: ${detail}`);
+            migErr.classification = 'migration';
+            migErr.failedMigration = (result && result.failed) || null;
+            migErr.dbPath = userDbPath;
+            throw migErr;
+          }
+        }
       }
 
       // Ensure LINK_DATABASE_URL is set for lnlink-server initialization

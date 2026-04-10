@@ -8,14 +8,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // nodeserver related API
     getServerStatus: () => ipcRenderer.invoke('get-server-status'),
     restartServer: () => ipcRenderer.invoke('restart-server'),
-    installServerDependencies: () => ipcRenderer.invoke('install-server-dependencies'),
-    
-    // General server requests
-    makeServerRequest: (endpoint, options) => ipcRenderer.invoke('make-server-request', endpoint, options),
-    
-    // LND API specific requests
-    makeLndRequest: (endpoint, options) => ipcRenderer.invoke('make-lnd-request', endpoint, options),
-    
+
+    // NOTE: `installServerDependencies`, `makeServerRequest` and
+    // `makeLndRequest` previously lived here but had no corresponding
+    // `ipcMain.handle` anywhere in the main process, so any renderer
+    // call would have thrown `No handler registered for ...`. Removed
+    // to keep the preload/main contract honest.
+
     // Listen for messages from the main process
     onServerStatus: (callback) => ipcRenderer.on('server-status', callback),
     onShowServerStatus: (callback) => ipcRenderer.on('show-server-status', callback),
@@ -28,6 +27,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
     
     // Remove listeners
     removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel)
+});
+
+// Expose welcome-page API to window.welcomeAPI.
+//
+// Only visible to the welcome.html page but also present during the
+// regular lnlink-server UI session (Electron preloads run in every
+// navigation of the same BrowserWindow). That's fine: the handlers
+// themselves do nothing dangerous outside the welcome flow, and the
+// lnlink-server UI never references window.welcomeAPI.
+contextBridge.exposeInMainWorld('welcomeAPI', {
+  startServices: () => ipcRenderer.invoke('welcome:start'),
+  backupNow: () => ipcRenderer.invoke('welcome:backup'),
+  clearAllData: () => ipcRenderer.invoke('welcome:clear'),
+  getInfo: () => ipcRenderer.invoke('welcome:info'),
+  openDataDir: () => ipcRenderer.invoke('welcome:open-data-dir'),
+  confirm: (opts) => ipcRenderer.invoke('welcome:confirm', opts),
+  quit: () => ipcRenderer.invoke('welcome:quit'),
+  versionCheck: () => ipcRenderer.invoke('welcome:version-check'),
+  resetLdk: () => ipcRenderer.invoke('welcome:reset-ldk'),
+  acknowledgeVersion: () => ipcRenderer.invoke('welcome:acknowledge-version'),
 });
 
 // Expose Nostr API to window.nostr

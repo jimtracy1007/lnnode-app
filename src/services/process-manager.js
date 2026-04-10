@@ -94,22 +94,32 @@ class ProcessManager {
     return this.torProcess;
   }
 
-  // Force kill process by name using system commands (last-resort fallback)
+  // Force kill process by name using system commands.
+  //
+  // DISABLED for safety. The previous implementation ran
+  //   pkill -9 -x "<name>"           (macOS / Linux)
+  //   taskkill /F /IM <name>.exe /T  (Windows)
+  // against names in {tor, litd, rgb-lightning-node}. For `tor` that
+  // happily kills a user's Tor Browser; for `litd` it kills any separate
+  // lightning-terminal instance the user runs outside LN-Link; for
+  // `rgb-lightning-node` it collides with dev setups running a second
+  // node. For a wallet app this is an unacceptable foot-gun.
+  //
+  // The safe path — forceKillByPid() — is already the primary mechanism
+  // at every call site (killAllProcesses(), forceKillAllSync()). If PID
+  // snapshotting failed and we end up here as a last resort, leaving an
+  // orphaned child process behind is strictly better than murdering an
+  // unrelated user process with the same executable name.
+  //
+  // Re-enable only with a path-verified kill: resolve each candidate
+  // PID's executable via `ps-list` (or lsof) and confirm it lives under
+  // this app's bundled bin/ directory before sending a signal.
   forceKillProcessByName(processName) {
-    log.info(`Force killing ${processName} process (last-resort)...`);
-    try {
-      const { execSync } = require('child_process');
-      
-      if (process.platform === 'darwin' || process.platform === 'linux') {
-        execSync(`pkill -9 -x "${processName}" || true`);
-        log.info(`Killed ${processName} process with pkill -9`);
-      } else if (process.platform === 'win32') {
-        execSync(`taskkill /F /IM ${processName}.exe /T 2>nul || exit 0`);
-        log.info(`Killed ${processName} process with taskkill /F`);
-      }
-    } catch (e) {
-      log.error(`Error force killing ${processName} process:`, e);
-    }
+    log.info(
+      `[process-manager] name-based kill for "${processName}" skipped: ` +
+        'disabled to avoid killing unrelated user processes with the same name. ' +
+        'Relying on PID-based forceKillByPid instead.',
+    );
   }
 
   // Check if process is alive
