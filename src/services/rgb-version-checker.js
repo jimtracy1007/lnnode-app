@@ -311,6 +311,19 @@ function inspectOnly() {
     return { state: 'fresh', stored, expected };
   }
 
+  // Stamp file missing but .rgb data exists — the stamp was lost (Clear All
+  // Data, or an older build that never wrote one). We cannot know which
+  // version created the data, so assume it matches the current binary and
+  // stamp it. The data was clearly working before the stamp disappeared.
+  if (stored == null) {
+    writeStoredRgbVersion(expected);
+    log.info(
+      `[rgb-version] stamp missing with existing .rgb data, ` +
+        `assuming current version ${expected} and stamping`,
+    );
+    return { state: 'non-breaking', stored: null, expected };
+  }
+
   const compat = readCompatJson();
   const classification = classifyUpgrade(
     stored,

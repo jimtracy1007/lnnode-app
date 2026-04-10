@@ -22,6 +22,7 @@ const pathManager = require('../utils/path-manager');
 // Chromium/Electron runtime entries in userData — never back up or wipe these.
 const BACKUP_SKIP = new Set([
   'backups',
+  'app-config.json',
   'SingletonCookie', 'SingletonLock', 'SingletonSocket',
   'Local Storage', 'Session Storage', 'GPUCache', 'Code Cache',
   'Network', 'blob_storage', 'Partitions',

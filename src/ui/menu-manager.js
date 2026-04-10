@@ -92,6 +92,7 @@ async function showVersions() {
 //   logs/    -> noisy, not state, large
 const BACKUP_SKIP = new Set([
   'backups',
+  'app-config.json',
   'SingletonCookie', 'SingletonLock', 'SingletonSocket',
   'Local Storage', 'Session Storage', 'GPUCache', 'Code Cache',
   'Network', 'blob_storage', 'Partitions',
