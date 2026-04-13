@@ -7,52 +7,8 @@ permissions:
   contents: write
 
 jobs:
-  # build-mac-amd:
-  #   runs-on: macos-14
-  #   environment: prod-deploy
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-
-  #     - name: Remove package-lock.json
-  #       run: rm -f package-lock.json
-
-  #     - name: Setup Node.js (x64)
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 22
-  #         architecture: x64
-  #         registry-url: https://registry.npmjs.org
-  #         cache: "yarn"
-
-  #     - name: Cache Electron (macOS)
-  #       uses: actions/cache@v4
-  #       with:
-  #         path: |
-  #           ~/Library/Caches/electron
-  #           ~/Library/Caches/electron-builder
-  #         key: ${{ runner.os }}-electron-${{ hashFiles('yarn.lock') }}
-
-  #     - name: Install deps
-  #       run: yarn install --frozen-lockfile
-
-  #     - name: Prebuild Prisma (mac-amd)
-  #       run: yarn prebuild
-
-  #     - name: Build (mac-amd)
-  #       env:
-  #         ELECTRON_BUILDER_PUBLISH: never
-  #       run: npx electron-builder --mac=dmg --x64 --publish=never
-
-  #     - name: Upload artifacts (mac-amd)
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: dist-mac-amd
-  #         path: |
-  #           dist/*.dmg
-  #           dist/*.blockmap
+  # macOS Intel (darwin-x64) is NOT supported — @nodeflow-network/nodeflow-bin has no
+  # darwin-x64 build (rgb-lightning-node has no Intel Mac upstream binary). arm64 only.
 
   build-mac-arm:
     runs-on: macos-latest
@@ -226,18 +182,20 @@ jobs:
   #           Write-Host "Attempt $i of 3"
   #           try {
   #             if ($i -eq 1) {
-  #               # First attempt: Try normal install
+  #               # First attempt: normal install
   #               Write-Host "Trying normal install..."
   #               yarn install --frozen-lockfile --ignore-scripts --network-timeout 300000
   #             } elseif ($i -eq 2) {
-  #               # Second attempt: Skip optional dependencies
-  #               Write-Host "Trying without optional dependencies..."
-  #               yarn install --frozen-lockfile --ignore-scripts --network-timeout 300000 --ignore-optional
+  #               # Second attempt: retry with longer timeout
+  #               Write-Host "Retrying with longer timeout..."
+  #               yarn install --frozen-lockfile --ignore-scripts --network-timeout 600000
   #             } else {
-  #               # Final attempt: Skip everything possible
-  #               Write-Host "Trying with all ignores..."
-  #               yarn install --frozen-lockfile --ignore-scripts --network-timeout 300000 --ignore-optional --ignore-engines --ignore-platform
+  #               # Final attempt: same but allow engines mismatch
+  #               Write-Host "Final attempt..."
+  #               yarn install --frozen-lockfile --ignore-scripts --network-timeout 600000 --ignore-engines
   #             }
+  #             # NOTE: DO NOT use --ignore-optional — it skips @nodeflow-network/bin-win32-x64
+  #             # which is required for binary resolution. afterPack.js enforces this.
   #             Write-Host "Install successful!"
   #             break
   #           } catch {

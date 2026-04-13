@@ -102,47 +102,30 @@ function performBackupAndWipe() {
 
 /* ----------------------------- version info ----------------------------- */
 
-function readBinariesJson() {
-  const candidates = [
-    path.join(__dirname, '..', '..', 'binaries.json'),
-    path.join(app.getAppPath(), 'binaries.json'),
-  ];
-  for (const candidate of candidates) {
-    try {
-      if (fs.existsSync(candidate)) {
-        return JSON.parse(fs.readFileSync(candidate, 'utf-8'));
-      }
-    } catch (e) {
-      log.warn(`[startup-actions] failed to parse ${candidate}: ${e.message}`);
-    }
-  }
-  return null;
-}
-
-function tagFromUrl(url) {
-  if (typeof url !== 'string') return null;
-  const m = url.match(/\/download\/([^/]+)\//);
-  return m ? m[1] : null;
-}
-
 /**
  * Pick the bundled rgb-lightning-node and litd tags for the current
- * platform. Returns tags where known, or 'unknown' otherwise.
+ * platform from PROVENANCE.json in the @nodeflow-network/bin-<plat>-<arch>
+ * sub-package. Returns 'unknown' for any component that cannot be resolved.
  */
 function getBundledVersions() {
-  const bin = readBinariesJson();
-  const fallback = { rgb: 'unknown', litd: 'unknown' };
-  if (!bin) return fallback;
-  const platform = os.platform();
-  const arch = os.arch();
-  const key = `${platform}-${arch}`;
-  const group = bin[key] || {};
-  const rgbKey = platform === 'win32' ? 'rgb-lightning-node.exe' : 'rgb-lightning-node';
-  const litdKey = platform === 'win32' ? 'litd.exe' : 'litd';
-  return {
-    rgb: tagFromUrl(group[rgbKey]) || 'unknown',
-    litd: tagFromUrl(group[litdKey]) || 'unknown',
-  };
+  const subpkg = `@nodeflow-network/bin-${os.platform()}-${os.arch()}`;
+  try {
+    const subpkgDir = path.dirname(require.resolve(`${subpkg}/package.json`));
+    const provenancePath = path.join(subpkgDir, 'PROVENANCE.json');
+    if (!fs.existsSync(provenancePath)) {
+      log.warn(`[startup-actions] PROVENANCE.json not found at ${provenancePath}`);
+      return { rgb: 'unknown', litd: 'unknown' };
+    }
+    const provenance = JSON.parse(fs.readFileSync(provenancePath, 'utf-8'));
+    return {
+      rgb: (provenance.rgb && provenance.rgb.tag) || 'unknown',
+      // provenance.terminal.tag = litd tag (from the `lightning-terminal` repo, hence "terminal")
+      litd: (provenance.terminal && provenance.terminal.tag) || 'unknown',
+    };
+  } catch (e) {
+    log.warn(`[startup-actions] getBundledVersions failed (subpkg=${subpkg}): ${e.message}`);
+    return { rgb: 'unknown', litd: 'unknown' };
+  }
 }
 
 /**

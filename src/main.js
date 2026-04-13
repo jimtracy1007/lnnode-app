@@ -250,7 +250,7 @@ async function checkForRemainingProcesses() {
   for (const p of list) pidMap.set(p.pid, p.ppid);
 
   const ourPid = process.pid;
-  const ourBinPath = pathManager.getBinaryPath();
+  const ourBinPath = pathManager.getNodeflowBinPackageRoot();
 
   // Walk up from `candidatePid` via ppid until we either find
   // `ancestorPid`, reach pid 1, or hit a guard limit. Guards against
@@ -268,10 +268,12 @@ async function checkForRemainingProcesses() {
     return false;
   }
 
-  // Does `proc.cmd` reference a binary under our bundled bin/ tree?
+  // Does `proc.cmd` reference a binary under our nodeflow-bin sub-package tree?
   // ps-list sometimes returns a truncated or empty cmd on macOS — when
   // it does we return false and miss the orphan case, which is the
   // safe failure mode (leave foreign processes alone).
+  // NOTE: ourBinPath is the full install-specific path, so orphans from a
+  // different NodeFlow version at a different path are intentionally not adopted.
   function isOurBinary(proc) {
     const cmd = proc && proc.cmd;
     if (!cmd || !ourBinPath) return false;

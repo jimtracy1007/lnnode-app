@@ -1,5 +1,16 @@
 /*
- * Preinstall binary fetcher
+ * DEPRECATED — binaries are now provided by @nodeflow-network/nodeflow-bin,
+ * an optionalDependency installed with lnlink-server. This script is no longer
+ * referenced by any npm lifecycle hook. Running it is a no-op.
+ */
+console.warn(
+  '[fetch-binaries] DEPRECATED: binaries are now provided by ' +
+  '@nodeflow-network/nodeflow-bin via lnlink-server. This script does nothing.'
+);
+process.exit(0);
+
+/*
+ * Original preinstall binary fetcher (kept for reference):
  * - Reads binaries.json
  * - Downloads and extracts platform-specific artifacts into bin/<platform-arch>/
  * - Uses system curl and tar to avoid Node deps (preinstall runs before deps are available)

@@ -1,7 +1,6 @@
 const { app } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const os = require('os');
 const log = require('electron-log');
 
 class PathManager {
@@ -16,17 +15,6 @@ class PathManager {
       const appDir = path.join(this.resourcesPath, 'app');
       const appAsarUnpacked = path.join(this.resourcesPath, 'app.asar.unpacked');
 
-      // Determine binary root path (extraFiles are placed directly under Resources/bin)
-      const packagedBinPath = path.join(this.resourcesPath, 'bin');
-      const unpackedBinPath = path.join(appAsarUnpacked, 'bin');
-      if (fs.existsSync(packagedBinPath)) {
-        this.binaryRootPath = packagedBinPath;
-      } else if (fs.existsSync(unpackedBinPath)) {
-        this.binaryRootPath = unpackedBinPath;
-      } else {
-        this.binaryRootPath = packagedBinPath; // fallback
-      }
-
       if (fs.existsSync(path.join(appDir, 'data'))) {
         this.appDataPath = path.join(appDir, 'data');
       } else if (fs.existsSync(path.join(appAsarUnpacked, 'data'))) {
@@ -37,49 +25,46 @@ class PathManager {
     } else {
       this.userDataPath = path.join(__dirname, '..', '..', 'data');
       this.resourcesPath = path.join(__dirname, '..', '..', 'data');
-      this.binaryRootPath = path.join(__dirname, '..', '..', 'bin');
     }
 
     this.debugPaths();
   }
 
-
   getDataPath() {
     return this.userDataPath;
   }
 
-  getBinaryRootPath() {
-    return this.binaryRootPath;
-  }
-
-  getBinaryDir() {
-    const platform = os.platform();
-    const arch = os.arch();
-    
-    // Map platform names
-    let platformName = platform;
-    if (platform === 'win32') {
-      platformName = 'win32';
-    } else if (platform === 'darwin') {
-      platformName = 'darwin';
-    } else if (platform === 'linux') {
-      platformName = 'linux';
-    }
-
-    // Map architecture names
-    let archName = arch;
-    if (arch === 'x64') {
-      archName = 'x64';
-    } else if (arch === 'arm64') {
-      archName = 'arm64';
-    }
-
-    return `${platformName}-${archName}`;
-  }
-
   getBinaryPath() {
-    // Full path to platform-specific bin directory: <root>/bin/<platform-arch>
-    return path.join(this.binaryRootPath, this.getBinaryDir());
+    // Binaries are provided by @nodeflow-network/nodeflow-bin (via lnlink-server).
+    // Returning "" means LINK_BINARY_PATH is not set, so lnlink-server's
+    // binary-resolver falls through to nodeflow-bin's auto-resolution.
+    return "";
+  }
+
+  /**
+   * Returns the root directory of the platform-specific nodeflow-bin sub-package
+   * (e.g. @nodeflow-network/bin-darwin-arm64). Used by main.js to identify
+   * orphaned child processes from a previous crashed run by matching cmd paths.
+   * Returns "" if the sub-package cannot be resolved — isOurBinary() guards it safely.
+   *
+   * INVARIANT: for require.resolve to work inside a packaged Electron asar, BOTH
+   * @nodeflow-network/nodeflow-bin AND @nodeflow-network/bin-<platform>-<arch> must
+   * be listed in asarUnpack (package.json). Narrowing asarUnpack to only the child
+   * package will break module resolution from code inside the asar.
+   *
+   * NOTE: orphan adoption intentionally matches only binaries from the current
+   * install path. A litd/rgb orphan from a different NodeFlow version at a different
+   * install path will NOT be adopted — cross-version adoption would be unsafe (each
+   * version expects its own IPC protocol and data-dir layout).
+   */
+  getNodeflowBinPackageRoot() {
+    try {
+      const subpkg = `@nodeflow-network/bin-${process.platform}-${process.arch}`;
+      return path.dirname(require.resolve(`${subpkg}/package.json`));
+    } catch (e) {
+      log.warn(`[path-manager] nodeflow-bin sub-package not resolvable: ${e.message}`);
+      return '';
+    }
   }
 
   getAppDataPath() {
@@ -101,9 +86,9 @@ class PathManager {
     log.info('=== PathManager Debug ===');
     log.info('isPackaged:', this.isPackaged);
     log.info('getDataPath():', this.getDataPath());
-    log.info('getBinaryRootPath():', this.getBinaryRootPath());
-    log.info('getBinaryPath():', this.getBinaryPath());
+    log.info('getBinaryPath(): "" (delegated to @nodeflow-network/nodeflow-bin via lnlink-server)');
+    log.info('getNodeflowBinPackageRoot():', this.getNodeflowBinPackageRoot());
   }
 }
 
-module.exports = new PathManager(); 
+module.exports = new PathManager();

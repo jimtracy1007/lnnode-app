@@ -4,14 +4,12 @@
   "description": "Lightning Network Node Application built with Electron",
   "main": "src/main.js",
   "scripts": {
-    "preinstall": "node ./scripts/fetch-binaries.js",
     "prisma:generate": "node ./scripts/prisma-setup.js --step=generate",
     "prisma:migrate": "node ./scripts/prisma-setup.js --step=migrate",
     "prisma:setup": "node ./scripts/prisma-setup.js",
     "dev": "node ./scripts/prisma-setup.js && electron . --dev",
     "build": "electron-builder",
-    "build:mac": "electron-builder --mac --x64 --arm64 --publish=never",
-    "build:mac-amd": "electron-builder --mac --x64 --publish=never",
+    "build:mac": "electron-builder --mac --arm64 --publish=never",
     "build:mac-arm": "electron-builder --mac --arm64 --publish=never",
     "build:win": "electron-builder --win --publish=never",
     "pack": "electron-builder --dir",
@@ -40,7 +38,7 @@
     "dotenv": "^17.2.3",
     "electron-log": "^5.4.0",
     "electron-store": "^8.1.0",
-    "lnlink-server": "1.2.2",
+    "lnlink-server": "1.2.3",
     "nostr-tools": "1.17.0",
     "prisma": "6.14.0",
     "ps-list": "^7.2.0"
@@ -55,7 +53,7 @@
     "files": [
       "src/**/*",
       "assets/**/*",
-      "binaries.json",
+      "!bin/**",
       "rgb-compat.json",
       ".env",
       {
@@ -81,7 +79,7 @@
       "node_modules/.prisma/client/**",
       "node_modules/@prisma/client/**",
       "node_modules/lnlink-server/prisma/**",
-      "bin/**"
+      "node_modules/@nodeflow-network/**"
     ],
     "afterSign": "scripts/afterSign.js",
     "mac": {
@@ -95,21 +93,6 @@
           "arch": [
             "arm64"
           ]
-        },
-        {
-          "target": "dmg",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "extraFiles": [
-        {
-          "from": "bin/darwin-${arch}/",
-          "to": "Resources/bin/darwin-${arch}/",
-          "filter": [
-            "**/*"
-          ]
         }
       ]
     },
@@ -122,15 +105,6 @@
             "x64"
           ]
         }
-      ],
-      "extraFiles": [
-        {
-          "from": "bin/win32-${arch}/",
-          "to": "Resources/bin/win32-${arch}/",
-          "filter": [
-            "**/*"
-          ]
-        }
       ]
     },
     "linux": {
@@ -140,15 +114,6 @@
           "target": "AppImage",
           "arch": [
             "x64"
-          ]
-        }
-      ],
-      "extraFiles": [
-        {
-          "from": "bin/linux-${arch}/",
-          "to": "Resources/bin/linux-${arch}/",
-          "filter": [
-            "**/*"
           ]
         }
       ]

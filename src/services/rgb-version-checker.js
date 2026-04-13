@@ -74,34 +74,42 @@ function readBundledJson(filename) {
   return null;
 }
 
-function readBinariesJson() {
-  return readBundledJson('binaries.json');
-}
-
 function readCompatJson() {
   return readBundledJson('rgb-compat.json');
 }
 
 /**
  * Extract the bundled rgb-lightning-node version for the current platform.
- * Returns the GitHub release tag (e.g. "v0.2.1-rc.6") parsed from the
- * download URL in binaries.json, or null if it cannot be determined.
+ * Returns the GitHub release tag (e.g. "v0.2.1-rc.6"), or null if unknown.
+ *
+ * Source: PROVENANCE.json from @nodeflow-network/bin-<platform>-<arch>.
+ * This is the authoritative source — binaries come from nodeflow-bin and
+ * PROVENANCE.json is the record of exactly what was packaged.
+ *
+ * Returns null on any failure; callers handle null via the 'expected-unknown'
+ * state which is degraded-but-non-blocking, preferable to a stale version tag.
  */
 function getExpectedRgbVersion() {
-  const binaries = readBinariesJson();
-  if (!binaries) return null;
-
-  const platform = os.platform();            // darwin | win32 | linux
-  const arch = os.arch();                    // arm64 | x64
-  const key = `${platform}-${arch}`;
-  const binaryName = platform === 'win32' ? 'rgb-lightning-node.exe' : 'rgb-lightning-node';
-
-  const url = binaries[key] && binaries[key][binaryName];
-  if (!url || typeof url !== 'string') return null;
-
-  // URL format: .../releases/download/<tag>/<asset>
-  const match = url.match(/\/download\/([^/]+)\//);
-  return match ? match[1] : null;
+  try {
+    const subpkg = `@nodeflow-network/bin-${os.platform()}-${os.arch()}`;
+    const subpkgDir = path.dirname(require.resolve(`${subpkg}/package.json`));
+    const provenancePath = path.join(subpkgDir, 'PROVENANCE.json');
+    if (!fs.existsSync(provenancePath)) {
+      log.warn(`[rgb-version] PROVENANCE.json not found at ${provenancePath}`);
+      return null;
+    }
+    const provenance = JSON.parse(fs.readFileSync(provenancePath, 'utf-8'));
+    const tag = provenance && provenance.rgb && provenance.rgb.tag;
+    if (!tag || typeof tag !== 'string') {
+      log.warn('[rgb-version] PROVENANCE.json missing rgb.tag field');
+      return null;
+    }
+    log.info(`[rgb-version] expected version from PROVENANCE.json: ${tag}`);
+    return tag;
+  } catch (e) {
+    log.warn(`[rgb-version] getExpectedRgbVersion failed: ${e.message}`);
+    return null;
+  }
 }
 
 /* ------------------------ version parsing + classify ------------------------ */
@@ -287,14 +295,14 @@ function rgbDataIsMeaningful() {
  *                            a valid escape hatch via
  *                            acknowledgeVersionMismatch().
  *   state === 'expected-unknown'
- *                            binaries.json could not be read. Treat as
- *                            degraded but non-blocking — welcome page
- *                            surfaces a yellow warning but allows Start.
+ *                            PROVENANCE.json could not be read or is missing
+ *                            rgb.tag. Treat as degraded but non-blocking —
+ *                            welcome page surfaces a yellow warning but allows Start.
  */
 function inspectOnly() {
   const expected = getExpectedRgbVersion();
   if (!expected) {
-    log.warn('[rgb-version] expected version unknown (binaries.json read failed?)');
+    log.warn('[rgb-version] expected version unknown (PROVENANCE.json unreadable or missing rgb.tag)');
     return { state: 'expected-unknown' };
   }
 

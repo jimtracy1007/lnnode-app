@@ -148,7 +148,7 @@ function renderVersionBanner(check) {
         <div class="banner-title">Version Check Degraded</div>
         <div class="banner-body">
           Could not determine the bundled rgb-lightning-node version
-          (binaries.json read failed). Continuing is allowed but the
+          (PROVENANCE.json read failed). Continuing is allowed but the
           upgrade-safety check is effectively off — take extra care
           before starting if you just updated NodeFlow.
         </div>

@@ -18,53 +18,29 @@ const pathManager = require('../utils/path-manager');
 /* ----------------------------- version info ----------------------------- */
 
 /**
- * Read bundled binaries.json. Same resolution strategy as the rgb version
- * checker — __dirname-relative in dev, app.asar in packaged builds. Kept
- * local to this file so menu-manager does not depend on the checker.
- */
-function readBinariesJson() {
-  // src/ui/menu-manager.js -> ../../binaries.json
-  const candidates = [
-    path.join(__dirname, '..', '..', 'binaries.json'),
-    path.join(app.getAppPath(), 'binaries.json'),
-  ];
-  for (const candidate of candidates) {
-    try {
-      if (fs.existsSync(candidate)) {
-        return JSON.parse(fs.readFileSync(candidate, 'utf-8'));
-      }
-    } catch (e) {
-      log.warn(`[menu] failed to parse ${candidate}: ${e.message}`);
-    }
-  }
-  log.warn('[menu] binaries.json not found');
-  return null;
-}
-
-/** Extract the release tag out of a GitHub download URL. */
-function tagFromUrl(url) {
-  if (typeof url !== 'string') return null;
-  const m = url.match(/\/download\/([^/]+)\//);
-  return m ? m[1] : null;
-}
-
-/**
- * Pick the rgb-lightning-node and litd tags for the current platform.
- * Returns `{ rgb, litd }`, each either a tag string or 'unknown'.
+ * Pick the rgb-lightning-node and litd tags for the current platform from
+ * PROVENANCE.json in the @nodeflow-network/bin-<plat>-<arch> sub-package.
+ * Returns 'unknown' for any component that cannot be resolved.
  */
 function getBundledVersions() {
-  const bin = readBinariesJson();
-  if (!bin) return { rgb: 'unknown', litd: 'unknown' };
-  const platform = os.platform();
-  const arch = os.arch();
-  const key = `${platform}-${arch}`;
-  const group = bin[key] || {};
-  const rgbKey = platform === 'win32' ? 'rgb-lightning-node.exe' : 'rgb-lightning-node';
-  const litdKey = platform === 'win32' ? 'litd.exe' : 'litd';
-  return {
-    rgb: tagFromUrl(group[rgbKey]) || 'unknown',
-    litd: tagFromUrl(group[litdKey]) || 'unknown',
-  };
+  const subpkg = `@nodeflow-network/bin-${os.platform()}-${os.arch()}`;
+  try {
+    const subpkgDir = path.dirname(require.resolve(`${subpkg}/package.json`));
+    const provenancePath = path.join(subpkgDir, 'PROVENANCE.json');
+    if (!fs.existsSync(provenancePath)) {
+      log.warn(`[menu] PROVENANCE.json not found at ${provenancePath}`);
+      return { rgb: 'unknown', litd: 'unknown' };
+    }
+    const provenance = JSON.parse(fs.readFileSync(provenancePath, 'utf-8'));
+    return {
+      rgb: (provenance.rgb && provenance.rgb.tag) || 'unknown',
+      // provenance.terminal.tag = litd tag (from the `lightning-terminal` repo, hence "terminal")
+      litd: (provenance.terminal && provenance.terminal.tag) || 'unknown',
+    };
+  } catch (e) {
+    log.warn(`[menu] getBundledVersions failed (subpkg=${subpkg}): ${e.message}`);
+    return { rgb: 'unknown', litd: 'unknown' };
+  }
 }
 
 async function showVersions() {

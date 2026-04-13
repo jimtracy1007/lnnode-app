@@ -19,7 +19,7 @@ exports.default = async function(context) {
 
   // Check if lnlink-server is properly packaged (no asar)
   const resourcesBase = electronPlatformName === 'darwin'
-    ? path.join(appOutDir, 'LN-Link.app/Contents/Resources')
+    ? path.join(appOutDir, 'NodeFlow.app/Contents/Resources')
     : path.join(appOutDir, 'resources');
 
   const unpackedRoot = path.join(resourcesBase, 'app.asar.unpacked');
@@ -190,5 +190,32 @@ exports.default = async function(context) {
     }
   }
   
+  // Verify @nodeflow-network/bin-<target> and marker binary are in app.asar.unpacked.
+  // A cross-build from a mismatched host OS will silently omit the optionalDependency,
+  // producing a package that fails at first launch. Catch it here at build time instead.
+  const targetKey =
+    electronPlatformName === 'win32' ? 'win32-x64' :
+    electronPlatformName === 'linux' ? 'linux-x64' :
+    `darwin-${actualArch}`;
+  const nodeflowBinPkg = path.join(unpackedRoot, 'node_modules', '@nodeflow-network', `bin-${targetKey}`);
+  if (!fs.existsSync(nodeflowBinPkg)) {
+    throw new Error(
+      `[afterPack] @nodeflow-network/bin-${targetKey} not found at ${nodeflowBinPkg}. ` +
+      `Cross-building from a host OS that does not match the target will cause optionalDependencies ` +
+      `to be skipped. Build ${targetKey} targets on a matching host.`
+    );
+  }
+  const binExt = electronPlatformName === 'win32' ? '.exe' : '';
+  const markerBinary = path.join(nodeflowBinPkg, 'bin', 'terminal', `litd${binExt}`);
+  if (!fs.existsSync(markerBinary)) {
+    throw new Error(`[afterPack] nodeflow-bin sub-package present but litd missing: ${markerBinary}`);
+  }
+  const provenancePath = path.join(nodeflowBinPkg, 'PROVENANCE.json');
+  if (!fs.existsSync(provenancePath)) {
+    throw new Error(`[afterPack] PROVENANCE.json missing from bin-${targetKey}: ${provenancePath}. ` +
+      `rgb-version-checker depends on it to detect breaking upgrades.`);
+  }
+  console.log(`✅ nodeflow-bin verified: bin-${targetKey} (litd + PROVENANCE.json present)`);
+
   console.log('✅ afterPack completed successfully');
 };
